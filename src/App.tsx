@@ -1,6 +1,10 @@
 import { useState } from "react";
 import type { Player } from "./core/board";
-import { DEFAULT_SETTINGS, type GameSettings } from "./core/game";
+import { DEFAULT_SETTINGS, replay, type GameSettings, type Move } from "./core/game";
+import { strToMoves } from "./core/notation";
+import { loadInProgress } from "./store/history";
+import { HistoryScreen } from "./ui/HistoryScreen";
+import { ReplayScreen } from "./ui/ReplayScreen";
 import { AVAILABLE_LEVELS } from "./engine/levels";
 import { GameScreen, type CpuConfig } from "./ui/GameScreen";
 
@@ -8,7 +12,9 @@ type Mode = "local" | "cpu";
 type Screen =
   | { name: "home" }
   | { name: "setup"; mode: Mode }
-  | { name: "game"; mode: Mode; settings: GameSettings; cpu?: CpuConfig };
+  | { name: "game"; mode: Mode; settings: GameSettings; cpu?: CpuConfig; initialMoves?: Move[]; startedAt?: string; nonce?: number }
+  | { name: "history" }
+  | { name: "replay"; title: string; settings: GameSettings; moves: Move[] };
 
 const STORAGE_KEY = "twixt.settings.v1";
 
@@ -27,6 +33,11 @@ function loadPrefs(): Prefs {
   return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 5 };
 }
 
+function replayToMove(settings: GameSettings, moves: Move[]): Player {
+  // 手番を求めるだけなので core の replay を使う
+  return replay(settings, moves).toMove;
+}
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: "home" });
   const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
@@ -40,10 +51,33 @@ export default function App() {
   if (screen.name === "game") {
     return (
       <GameScreen
-        key={`${screen.mode}-${JSON.stringify(screen.settings)}-${JSON.stringify(screen.cpu ?? null)}`}
+        key={`${screen.mode}-${JSON.stringify(screen.settings)}-${JSON.stringify(screen.cpu ?? null)}-${screen.nonce ?? 0}`}
         settings={screen.settings}
         cpu={screen.cpu}
+        initialMoves={screen.initialMoves}
+        startedAt={screen.startedAt}
         onExit={() => setScreen({ name: "home" })}
+      />
+    );
+  }
+
+  if (screen.name === "history") {
+    return <HistoryScreen onExit={() => setScreen({ name: "home" })} onOpen={(title, s, moves) => setScreen({ name: "replay", title, settings: s, moves })} />;
+  }
+
+  if (screen.name === "replay") {
+    return (
+      <ReplayScreen
+        title={screen.title}
+        settings={screen.settings}
+        moves={screen.moves}
+        onExit={() => setScreen({ name: "history" })}
+        onPlayFrom={(moves) => {
+          // 手番側が人間、相手が CPU(現在のレベル設定)
+          const st = replayToMove(screen.settings, moves);
+          const cpu: CpuConfig = { color: st === "white" ? "black" : "white", level: prefs.level, strongestTimeMs: prefs.strongestSec * 1000 };
+          setScreen({ name: "game", mode: "cpu", settings: screen.settings, cpu, initialMoves: moves, nonce: Date.now() });
+        }}
       />
     );
   }
@@ -104,13 +138,26 @@ export default function App() {
     );
   }
 
+  const inProgress = loadInProgress();
+  const resume = () => {
+    const g = loadInProgress();
+    if (!g) return;
+    setScreen({ name: "game", mode: g.mode, settings: g.settings, cpu: g.cpu, initialMoves: strToMoves(g.moves), startedAt: g.startedAt, nonce: Date.now() });
+  };
+
   return (
     <div className="screen home">
       <h1>TWIXT</h1>
       <p className="muted">白は上下、黒は左右を先につないだ方が勝ち</p>
-      <button className="primary big" onClick={() => setScreen({ name: "setup", mode: "cpu" })}>CPU と対戦</button>
+      {inProgress && (
+        <button className="primary big" onClick={resume}>
+          続きから({inProgress.mode === "cpu" && inProgress.cpu ? `CPU Lv${inProgress.cpu.level}` : "ローカル対戦"} · {inProgress.moves.split(/\s+/).filter(Boolean).length} 手目)
+        </button>
+      )}
+      <button className={`${inProgress ? "" : "primary "}big`} onClick={() => setScreen({ name: "setup", mode: "cpu" })}>CPU と対戦</button>
       <button className="big" onClick={() => setScreen({ name: "setup", mode: "local" })}>ローカル対戦</button>
       <button className="big" disabled>オンライン対戦(準備中)</button>
+      <button className="big" onClick={() => setScreen({ name: "history" })}>対局履歴・棋譜再生</button>
       <footer className="muted small">v{__APP_VERSION__} · CPU: twixtbot model (MIT) by Jordan Lampe / twixtbot-ui by stevens68</footer>
     </div>
   );

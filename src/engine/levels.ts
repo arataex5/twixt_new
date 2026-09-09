@@ -16,8 +16,8 @@ export const LEVELS: LevelSpec[] = [
   { level: 1, name: "入門", sims: 0, temperature: 1.0, topK: 12, description: "ネットの候補手から幅広く選ぶ。時々悪手を打つ" },
   { level: 2, name: "初級", sims: 0, temperature: 0.5, topK: 8, description: "候補手からやや絞って選ぶ" },
   { level: 3, name: "中級", sims: 0, temperature: 0, topK: 1, description: "ネットの最善手をそのまま打つ(twixtbot の trials 0 相当)" },
-  { level: 4, name: "上級", sims: 30, temperature: 0, topK: 1, description: "30 回の先読み(MCTS)" },
-  { level: 5, name: "有段", sims: 100, temperature: 0, topK: 1, description: "100 回の先読み(MCTS)" },
+  { level: 4, name: "上級", sims: 12, temperature: 0, topK: 1, description: "12 回の先読み(MCTS)。スマホで 1 手 3 秒程度" },
+  { level: 5, name: "有段", sims: 40, temperature: 0, topK: 1, description: "40 回の先読み(MCTS)。スマホで 1 手 10 秒程度" },
   { level: 6, name: "最強", sims: 0, timeMs: 5000, temperature: 0, topK: 1, description: "時間いっぱい先読み(端末が速いほど強い)" },
 ];
 

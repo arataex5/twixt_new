@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LinkId, Player } from "../core/board";
-import { applyMove, newGame, undo, type GameSettings, type GameState, type Move } from "../core/game";
+import { applyMove, newGame, replay, undo, type GameSettings, type GameState, type Move } from "../core/game";
 import { movesToStr, pointToStr } from "../core/notation";
 import { getEngine, type ThinkResult } from "../engine/EngineClient";
 import { levelSpec } from "../engine/levels";
+import { addRecord, clearInProgress, saveInProgress } from "../store/history";
 import { BoardSvg } from "./BoardSvg";
 
 export interface CpuConfig {
@@ -17,13 +18,18 @@ export interface CpuConfig {
 export interface GameScreenProps {
   settings: GameSettings;
   cpu?: CpuConfig;
+  /** 再開/局面指定: 開始時点の手順 */
+  initialMoves?: Move[];
+  startedAt?: string;
   onExit: () => void;
 }
 
 const NAME: Record<Player, string> = { white: "白(上下)", black: "黒(左右)" };
 
-export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
-  const [state, setState] = useState<GameState>(() => newGame(settings));
+export function GameScreen({ settings, cpu, initialMoves, startedAt, onExit }: GameScreenProps) {
+  const [state, setState] = useState<GameState>(() => (initialMoves?.length ? replay(settings, initialMoves) : newGame(settings)));
+  const startedAtRef = useRef(startedAt ?? new Date().toISOString());
+  const savedRef = useRef(false);
   const [selected, setSelected] = useState<Set<LinkId>>(new Set());
   const [rotateForBlack, setRotateForBlack] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +57,28 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
       setError((e as Error).message);
     }
   };
+
+  // 自動保存: 進行中は「続きから」用に、終了したら履歴へ
+  useEffect(() => {
+    const mode = cpu ? "cpu" : "local";
+    if (state.result) {
+      if (!savedRef.current && state.moves.length > 0) {
+        savedRef.current = true;
+        addRecord({
+          startedAt: startedAtRef.current,
+          endedAt: new Date().toISOString(),
+          mode, settings: state.settings, cpu,
+          moves: movesToStr(state.moves), result: state.result,
+        });
+      }
+      clearInProgress();
+    } else if (state.moves.length > 0) {
+      savedRef.current = false;
+      saveInProgress({ startedAt: startedAtRef.current, mode, settings: state.settings, cpu, moves: movesToStr(state.moves), updatedAt: new Date().toISOString() });
+    } else {
+      clearInProgress();
+    }
+  }, [state, cpu]);
 
   // エンジン初期化
   useEffect(() => {
@@ -196,7 +224,7 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
       {state.result && (
         <div className="result">
           <strong>{status}</strong>
-          <button className="primary" onClick={() => { setState(newGame(settings)); setSelected(new Set()); setLastThink(null); }}>もう一度</button>
+          <button className="primary" onClick={() => { const n = newGame(settings); stateRef.current = n; setState(n); setSelected(new Set()); setLastThink(null); savedRef.current = false; startedAtRef.current = new Date().toISOString(); }}>もう一度</button>
         </div>
       )}
     </div>

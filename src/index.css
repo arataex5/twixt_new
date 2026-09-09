@@ -41,3 +41,14 @@ select, input[type="text"] { font: inherit; padding: 6px 8px; border-radius: 6px
 .result { display: flex; justify-content: space-between; align-items: center; background: var(--panel); padding: 10px; border-radius: 8px; }
 .errbox { display: block; white-space: pre-wrap; word-break: break-all; background: var(--panel); padding: 8px; border-radius: 6px; font-size: 0.75rem; max-height: 50vh; overflow: auto; }
 .global-error { position: fixed; left: 8px; right: 8px; bottom: 8px; background: #7f1d1d; color: #fff; padding: 8px 10px; border-radius: 8px; font-size: 0.85rem; z-index: 100; white-space: pre-wrap; }
+
+.history { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.history-item { display: flex; align-items: center; gap: 8px; background: var(--panel); border-radius: 8px; padding: 8px 10px; }
+.history-main { flex: 1; cursor: pointer; }
+button.small { padding: 4px 8px; font-size: 0.85rem; }
+button.danger { border-color: var(--danger); color: var(--danger); }
+.controls.replay { flex-wrap: nowrap; }
+.controls.replay input[type="range"] { flex: 1; }
+.record code .cur { background: var(--accent); color: #fff; border-radius: 3px; }
+.record code span { cursor: pointer; }
+textarea { width: 100%; font: inherit; background: var(--panel); color: var(--fg); border: 1px solid #3a3d45; border-radius: 6px; padding: 6px; box-sizing: border-box; }
