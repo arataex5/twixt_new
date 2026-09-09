@@ -33,6 +33,7 @@ select, input[type="text"] { font: inherit; padding: 6px 8px; border-radius: 6px
 .toggle { font-size: 0.9rem; color: var(--muted); }
 .hint { font-size: 0.9rem; color: #f5a623; }
 .hint.error { color: var(--danger); }
+.hint.swap { color: #7dd3fc; background: #1e293b; padding: 8px; border-radius: 6px; }
 .muted { color: var(--muted); }
 .small { font-size: 0.8rem; }
 .row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--panel); border-radius: 8px; }

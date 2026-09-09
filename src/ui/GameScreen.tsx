@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LinkId, Player } from "../core/board";
 import { applyMove, newGame, undo, type GameSettings, type GameState, type Move } from "../core/game";
-import { movesToStr } from "../core/notation";
+import { movesToStr, pointToStr } from "../core/notation";
 import { getEngine, type ThinkResult } from "../engine/EngineClient";
 import { levelSpec } from "../engine/levels";
 import { BoardSvg } from "./BoardSvg";
@@ -103,6 +103,16 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
     return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${thinking ? " 思考中…" : ""}`;
   }, [state, cpu, thinking]);
 
+  // スワップ(パイルール)の説明: 初手のペグは主対角線で鏡映されて黒の駒になる
+  const swapNotice = useMemo(() => {
+    const last = state.moves[state.moves.length - 1];
+    const first = state.moves[0];
+    if (!last || last.type !== "swap" || !first || first.type !== "place") return null;
+    const from = pointToStr(first.x, first.y), to = pointToStr(first.y, first.x);
+    const who = cpu ? (cpu.color === "black" ? "CPU" : "あなた") : "後手";
+    return `${who}がスワップしました: 初手 ${from}(白) は ${to}(黒) に鏡映され、後手の駒になりました。白の番です。`;
+  }, [state.moves, cpu]);
+
   const overlay = useMemo(() => {
     if (!showCandidates || !lastThink) return undefined;
     const m = new Map<number, number>();
@@ -136,6 +146,7 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
         <div className="hint">選択した自リンク {selected.size} 本を外して着手します(もう一度タップで解除)</div>
       )}
       {error && <div className="hint error">{error}</div>}
+      {swapNotice && <div className="hint swap">{swapNotice}</div>}
       {cpu && (
         <div className="muted small">
           {engineStatus}

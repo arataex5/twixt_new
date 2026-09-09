@@ -23,10 +23,11 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
       await net.evaluate(newGame().board, "white", false);
       post({ type: "ready", loadMs, evalMs: performance.now() - t1 });
     } else if (msg.type === "think") {
-      current = { id: msg.id, cancelled: false };
+      const job = { id: msg.id, cancelled: false };
+      current = job;
       const state = replay(msg.settings, msg.moves);
-      const res = await think(state, msg.level, current);
-      if (current.cancelled) post({ type: "cancelled", id: msg.id });
+      const res = await think(state, msg.level, job);
+      if (job.cancelled) post({ type: "cancelled", id: msg.id });
       else post({ type: "move", id: msg.id, ...res });
     } else if (msg.type === "cancel") {
       if (current && current.id === msg.id) current.cancelled = true;

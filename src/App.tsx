@@ -80,7 +80,7 @@ export default function App() {
           </>
         )}
         <label className="row">
-          <span>パイルール(スワップ)</span>
+          <span>パイルール(スワップ)<br /><small className="muted">後手は先手の初手を「奪う」ことができる。初手は主対角線で鏡映され黒の駒になる</small></span>
           <input type="checkbox" checked={settings.pieRule} onChange={(e) => setSettings({ ...settings, pieRule: e.target.checked })} />
         </label>
         <label className="row">
