@@ -6,6 +6,7 @@ export interface ThinkResult {
   value: number;
   candidates: Candidate[];
   evalMs: number;
+  sims?: number;
 }
 
 export interface EngineInfo {
@@ -48,9 +49,14 @@ export class EngineClient {
     this.worker.postMessage(m);
   }
 
+  /** 思考の進捗(done, total)。total = -1 は時間制 */
+  onProgress: ((id: number, done: number, total: number) => void) | null = null;
+
   private onMessage(m: FromWorker) {
-    if (m.type === "move") {
-      this.pending.get(m.id)?.resolve({ move: m.move, value: m.value, candidates: m.candidates, evalMs: m.evalMs });
+    if (m.type === "progress") {
+      this.onProgress?.(m.id, m.done, m.total);
+    } else if (m.type === "move") {
+      this.pending.get(m.id)?.resolve({ move: m.move, value: m.value, candidates: m.candidates, evalMs: m.evalMs, sims: m.sims });
       this.pending.delete(m.id);
     } else if (m.type === "cancelled") {
       this.pending.get(m.id)?.reject(new Error("cancelled"));
@@ -62,10 +68,10 @@ export class EngineClient {
   }
 
   /** 思考を依頼。signal で中断可能 */
-  think(settings: GameSettings, moves: Move[], level: number, signal?: AbortSignal): Promise<ThinkResult> {
+  think(settings: GameSettings, moves: Move[], level: number, signal?: AbortSignal, strongestTimeMs?: number): Promise<ThinkResult> {
     const id = this.nextId++;
     const p = new Promise<ThinkResult>((resolve, reject) => this.pending.set(id, { resolve, reject }));
-    this.send({ type: "think", id, settings, moves, level });
+    this.send({ type: "think", id, settings, moves, level, strongestTimeMs });
     signal?.addEventListener("abort", () => this.send({ type: "cancel", id }), { once: true });
     return p;
   }

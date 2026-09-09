@@ -10,6 +10,8 @@ export interface CpuConfig {
   /** CPU が持つ色 */
   color: Player;
   level: number;
+  /** Lv6 の思考時間(ms) */
+  strongestTimeMs?: number;
 }
 
 export interface GameScreenProps {
@@ -29,6 +31,7 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
   const [engineStatus, setEngineStatus] = useState<string>(cpu ? "エンジン読み込み中…" : "");
   const [lastThink, setLastThink] = useState<ThinkResult | null>(null);
   const [showCandidates, setShowCandidates] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const humanColor: Player | "both" = cpu ? (cpu.color === "white" ? "black" : "white") : "both";
@@ -66,15 +69,17 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
     abortRef.current = ctrl;
     setThinking(true);
     const engine = getEngine();
+    setProgress(null);
+    engine.onProgress = (_id, done, total) => { if (!ctrl.signal.aborted) setProgress({ done, total }); };
     engine.ready()
-      .then(() => engine.think(state.settings, state.moves, cpu.level, ctrl.signal))
+      .then(() => engine.think(state.settings, state.moves, cpu.level, ctrl.signal, cpu.strongestTimeMs))
       .then((r) => {
         if (ctrl.signal.aborted) return;
         setLastThink(r);
         play(r.move);
       })
       .catch((e) => { if (!ctrl.signal.aborted) setError(`CPU エラー: ${(e as Error).message}`); })
-      .finally(() => { if (abortRef.current === ctrl) { setThinking(false); abortRef.current = null; } });
+      .finally(() => { if (abortRef.current === ctrl) { setThinking(false); setProgress(null); abortRef.current = null; } });
     return () => { ctrl.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.moves.length, state.result, cpu?.color, cpu?.level]);
@@ -93,6 +98,9 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
 
   const doUndo = () => {
     abortRef.current?.abort();
+    abortRef.current = null;
+    setThinking(false);
+    setProgress(null);
     // CPU 戦では自分の手と CPU の手をセットで戻す
     const count = cpu && state.moves.length >= 2 && state.toMove !== cpu.color ? 2 : 1;
     try {
@@ -112,8 +120,9 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
       return `${NAME[state.result.winner]} の勝ち(${state.result.reason === "connect" ? "連結" : "投了"})`;
     }
     const who = cpu && state.toMove === cpu.color ? "CPU" : cpu ? "あなた" : "";
-    return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${thinking ? " 思考中…" : ""}`;
-  }, [state, cpu, thinking]);
+    const prog = thinking && progress ? (progress.total > 0 ? ` ${progress.done}/${progress.total}` : ` ${progress.done}回`) : "";
+    return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${thinking ? ` 思考中…${prog}` : ""}`;
+  }, [state, cpu, thinking, progress]);
 
   // スワップ(パイルール)の説明: 初手のペグは主対角線で鏡映されて黒の駒になる
   const swapNotice = useMemo(() => {
@@ -162,7 +171,7 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
       {cpu && (
         <div className="muted small">
           {engineStatus}
-          {lastThink && ` / CPU評価 ${(lastThink.value * 100).toFixed(0)}%(CPU視点) ${lastThink.evalMs.toFixed(0)}ms`}
+          {lastThink && ` / CPU評価 ${(lastThink.value * 100).toFixed(0)}%(CPU視点) ${(lastThink.evalMs / 1000).toFixed(1)}s${lastThink.sims !== undefined ? ` ${lastThink.sims}回読み` : ""}`}
           {" / Lv"}{cpu.level} {levelSpec(cpu.level).name}
         </div>
       )}

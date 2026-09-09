@@ -3,7 +3,7 @@ import type { GameSettings, Move } from "../core/game";
 
 export type ToWorker =
   | { type: "init"; baseUrl: string }
-  | { type: "think"; id: number; settings: GameSettings; moves: Move[]; level: number }
+  | { type: "think"; id: number; settings: GameSettings; moves: Move[]; level: number; strongestTimeMs?: number }
   | { type: "cancel"; id: number };
 
 export interface Candidate {
@@ -14,6 +14,6 @@ export interface Candidate {
 export type FromWorker =
   | { type: "ready"; loadMs: number; evalMs: number }
   | { type: "progress"; id: number; done: number; total: number }
-  | { type: "move"; id: number; move: Move; value: number; candidates: Candidate[]; evalMs: number }
+  | { type: "move"; id: number; move: Move; value: number; candidates: Candidate[]; evalMs: number; sims?: number }
   | { type: "cancelled"; id: number }
   | { type: "error"; id?: number; message: string };

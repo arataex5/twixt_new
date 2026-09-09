@@ -16,14 +16,15 @@ interface Prefs {
   settings: GameSettings;
   humanColor: Player | "random";
   level: number;
+  strongestSec: number;
 }
 
 function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, ...JSON.parse(raw) };
+    if (raw) return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 5, ...JSON.parse(raw) };
   } catch { /* ignore */ }
-  return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3 };
+  return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 5 };
 }
 
 export default function App() {
@@ -39,7 +40,7 @@ export default function App() {
   if (screen.name === "game") {
     return (
       <GameScreen
-        key={`${screen.mode}-${JSON.stringify(screen.settings)}-${screen.cpu?.color}-${screen.cpu?.level}`}
+        key={`${screen.mode}-${JSON.stringify(screen.settings)}-${JSON.stringify(screen.cpu ?? null)}`}
         settings={screen.settings}
         cpu={screen.cpu}
         onExit={() => setScreen({ name: "home" })}
@@ -53,7 +54,7 @@ export default function App() {
       let cpu: CpuConfig | undefined;
       if (isCpu) {
         const human: Player = prefs.humanColor === "random" ? (Math.random() < 0.5 ? "white" : "black") : prefs.humanColor;
-        cpu = { color: human === "white" ? "black" : "white", level: prefs.level };
+        cpu = { color: human === "white" ? "black" : "white", level: prefs.level, strongestTimeMs: prefs.strongestSec * 1000 };
       }
       setScreen({ name: "game", mode: screen.mode, settings, cpu });
     };
@@ -77,6 +78,14 @@ export default function App() {
               </select>
             </label>
             <p className="muted small">{AVAILABLE_LEVELS.find((l) => l.level === prefs.level)?.description}</p>
+            {prefs.level === 6 && (
+              <label className="row">
+                <span>最強レベルの思考時間</span>
+                <select value={prefs.strongestSec} onChange={(e) => setPrefs({ ...prefs, strongestSec: Number(e.target.value) })}>
+                  {[3, 5, 10, 20, 30, 60].map((s) => <option key={s} value={s}>{s} 秒</option>)}
+                </select>
+              </label>
+            )}
           </>
         )}
         <label className="row">

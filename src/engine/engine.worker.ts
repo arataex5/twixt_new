@@ -4,6 +4,7 @@ import { applyMove, newGame, replay, type GameState, type Move } from "../core/g
 import { crossingCandidates } from "../core/links";
 import { policyIndexToCell } from "./features";
 import { levelSpec } from "./levels";
+import { Mcts } from "./mcts";
 import { Net } from "./net";
 import type { Candidate, FromWorker, ToWorker } from "./protocol";
 
@@ -26,7 +27,7 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
       const job = { id: msg.id, cancelled: false };
       current = job;
       const state = replay(msg.settings, msg.moves);
-      const res = await think(state, msg.level, job);
+      const res = await think(state, msg.level, job, msg.strongestTimeMs);
       if (job.cancelled) post({ type: "cancelled", id: msg.id });
       else post({ type: "move", id: msg.id, ...res });
     } else if (msg.type === "cancel") {
@@ -37,11 +38,11 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
   }
 };
 
-interface ThinkResult { move: Move; value: number; candidates: Candidate[]; evalMs: number }
+interface ThinkResult { move: Move; value: number; candidates: Candidate[]; evalMs: number; sims?: number }
 
-async function think(state: GameState, level: number, job: { cancelled: boolean }): Promise<ThinkResult> {
+async function think(state: GameState, level: number, job: { id: number; cancelled: boolean }, strongestTimeMs?: number): Promise<ThinkResult> {
   const t0 = performance.now();
-  const spec = levelSpec(level);
+  const spec = levelSpec(level, strongestTimeMs);
 
   // 先手の初手(パイルール有り): スワップされてもされなくても五分に近い点を選ぶ
   if (state.moves.length === 0 && state.settings.pieRule) {
@@ -59,6 +60,22 @@ async function think(state: GameState, level: number, job: { cancelled: boolean 
     if (swap) {
       return { move: { type: "swap" }, value: -ev.value, candidates: [], evalMs: performance.now() - t0 };
     }
+  }
+
+  // Lv4 以上: MCTS
+  if (spec.sims > 0 || spec.timeMs) {
+    const mcts = new Mcts(net, {
+      cpuct: 1.0,
+      smartRoot: true,
+      timeMs: spec.timeMs,
+      isCancelled: () => job.cancelled,
+      onProgress: (done, total) => post({ type: "progress", id: job.id, done, total }),
+    });
+    const r = await mcts.run(state, spec.sims || 100000);
+    if (job.cancelled) return { move: { type: "resign" }, value: 0, candidates: [], evalMs: 0 };
+    let move = r.move;
+    if (move.type === "place") move = placeWithRemoval(state, move.x, move.y);
+    return { move, value: r.value, candidates: r.candidates.map((c) => ({ cell: c.cell, p: c.p })), evalMs: performance.now() - t0, sims: r.sims };
   }
 
   const ev = await net.evaluate(state.board, state.toMove, true);

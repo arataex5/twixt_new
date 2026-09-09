@@ -18,12 +18,14 @@ export class Net {
   evalCount = 0;
   evalMs = 0;
 
-  async load(baseUrl: string): Promise<void> {
+  async load(baseUrl: string, modelBytes?: Uint8Array): Promise<void> {
     ort.env.wasm.wasmPaths = `${baseUrl}ort/`;
     // COOP/COEP が無い環境(GitHub Pages, Capacitor)では SharedArrayBuffer が使えないので 1 スレッド
     const isolated = (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated;
     ort.env.wasm.numThreads = isolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
-    this.session = await ort.InferenceSession.create(`${baseUrl}models/twixtbot.onnx`, {
+    this.session = modelBytes
+      ? await ort.InferenceSession.create(modelBytes, { executionProviders: ["wasm"], graphOptimizationLevel: "all" })
+      : await ort.InferenceSession.create(`${baseUrl}models/twixtbot.onnx`, {
       executionProviders: ["wasm"],
       graphOptimizationLevel: "all",
     });

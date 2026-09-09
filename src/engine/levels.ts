@@ -21,9 +21,10 @@ export const LEVELS: LevelSpec[] = [
   { level: 6, name: "最強", sims: 0, timeMs: 5000, temperature: 0, topK: 1, description: "時間いっぱい先読み(端末が速いほど強い)" },
 ];
 
-/** 現時点で利用可能なレベル(MCTS 実装前は 1〜3) */
-export const AVAILABLE_LEVELS = LEVELS.filter((l) => l.sims === 0 && !l.timeMs);
+export const AVAILABLE_LEVELS = LEVELS;
 
-export function levelSpec(level: number): LevelSpec {
-  return LEVELS.find((l) => l.level === level) ?? LEVELS[2];
+export function levelSpec(level: number, strongestTimeMs?: number): LevelSpec {
+  const spec = LEVELS.find((l) => l.level === level) ?? LEVELS[2];
+  if (spec.timeMs && strongestTimeMs) return { ...spec, timeMs: strongestTimeMs };
+  return spec;
 }
