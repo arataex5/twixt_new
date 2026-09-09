@@ -36,5 +36,8 @@ export default defineConfig({
       },
     }),
   ],
+  // onnxruntime-web: wasm を bundle に含めず public/ort/ のものを使う
+  resolve: { conditions: ["onnxruntime-web-use-extern-wasm"] },
+  worker: { format: "es" },
   build: { target: "es2022", chunkSizeWarningLimit: 2000 },
 });

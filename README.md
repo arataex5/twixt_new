@@ -24,7 +24,9 @@ npm run build      # GitHub Pages 用ビルド (dist/)
 
 - `src/core/` ルールエンジン(依存なし・純粋関数)
 - `src/ui/` 画面(React)
-- `src/engine/` CPU(ONNX Runtime Web + MCTS)※これから
+- `src/engine/` CPU(twixtbot モデルを ONNX Runtime Web で推論。Lv1〜3 は Policy のみ、MCTS は今後)
+- `public/models/twixtbot.onnx` 学習済みモデル(BonyJordan/twixtbot, MIT)
+- `public/ort/` ONNX Runtime Web の wasm
 - `android/` Capacitor が生成した Android プロジェクト
 
 計画書: `TWIXT_開発計画書_縮小版.md`, `TWIXT_アプリ構成設計.md`, `TWIXT_CPU構築案.md`
