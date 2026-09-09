@@ -1,0 +1,40 @@
+:root {
+  color-scheme: light dark;
+  --bg: #17181c;
+  --fg: #ececec;
+  --muted: #9a9a9a;
+  --panel: #23252b;
+  --accent: #3b82f6;
+  --danger: #e0483e;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; background: var(--bg); color: var(--fg); }
+body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+button {
+  font: inherit; color: var(--fg); background: var(--panel); border: 1px solid #3a3d45;
+  border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.big { width: 100%; padding: 14px; font-size: 1.1rem; margin: 6px 0; }
+select, input[type="text"] { font: inherit; padding: 6px 8px; border-radius: 6px; background: var(--panel); color: var(--fg); border: 1px solid #3a3d45; }
+.screen { max-width: 640px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 100%; }
+.home { justify-content: center; text-align: center; }
+.home h1 { font-size: 3rem; letter-spacing: 0.2em; margin: 0; }
+.bar { display: flex; align-items: center; gap: 10px; }
+.bar h2 { font-size: 1.1rem; margin: 0; }
+.status { flex: 1; text-align: center; font-weight: 600; padding: 6px; border-radius: 6px; }
+.status.white { background: #f4f1e8; color: #222; }
+.status.black { background: #000; color: #fff; }
+.status.over { background: var(--accent); color: #fff; }
+.board { width: 100%; height: auto; aspect-ratio: 1; display: block; border-radius: 8px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.toggle { font-size: 0.9rem; color: var(--muted); }
+.hint { font-size: 0.9rem; color: #f5a623; }
+.hint.error { color: var(--danger); }
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+.row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--panel); border-radius: 8px; }
+.record code { display: block; white-space: pre-wrap; word-break: break-all; background: var(--panel); padding: 8px; border-radius: 6px; margin: 6px 0; font-size: 0.85rem; }
+.result { display: flex; justify-content: space-between; align-items: center; background: var(--panel); padding: 10px; border-radius: 8px; }
