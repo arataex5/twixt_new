@@ -39,3 +39,5 @@ select, input[type="text"] { font: inherit; padding: 6px 8px; border-radius: 6px
 .row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--panel); border-radius: 8px; }
 .record code { display: block; white-space: pre-wrap; word-break: break-all; background: var(--panel); padding: 8px; border-radius: 6px; margin: 6px 0; font-size: 0.85rem; }
 .result { display: flex; justify-content: space-between; align-items: center; background: var(--panel); padding: 10px; border-radius: 8px; }
+.errbox { display: block; white-space: pre-wrap; word-break: break-all; background: var(--panel); padding: 8px; border-radius: 6px; font-size: 0.75rem; max-height: 50vh; overflow: auto; }
+.global-error { position: fixed; left: 8px; right: 8px; bottom: 8px; background: #7f1d1d; color: #fff; padding: 8px 10px; border-radius: 8px; font-size: 0.85rem; z-index: 100; white-space: pre-wrap; }

@@ -33,9 +33,15 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
 
   const humanColor: Player | "both" = cpu ? (cpu.color === "white" ? "black" : "white") : "both";
 
+  // 注意: setState の更新関数の中で throw すると React ごと落ちる(画面が真っ黒になる)ので、
+  // 先に次の状態を計算してから setState する
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const play = (m: Move) => {
     try {
-      setState((s) => applyMove(s, m));
+      const next = applyMove(stateRef.current, m);
+      stateRef.current = next;
+      setState(next);
       setSelected(new Set());
       setError(null);
     } catch (e) {
@@ -89,7 +95,13 @@ export function GameScreen({ settings, cpu, onExit }: GameScreenProps) {
     abortRef.current?.abort();
     // CPU 戦では自分の手と CPU の手をセットで戻す
     const count = cpu && state.moves.length >= 2 && state.toMove !== cpu.color ? 2 : 1;
-    setState((s) => undo(s, count));
+    try {
+      const next = undo(state, count);
+      stateRef.current = next;
+      setState(next);
+    } catch (e) {
+      setError((e as Error).message);
+    }
     setSelected(new Set());
   };
 
