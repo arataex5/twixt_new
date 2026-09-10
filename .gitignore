@@ -30,3 +30,4 @@ android/app/src/main/assets/capacitor.plugins.json
 
 # 自動対局スクリプトの一時ビルド
 scripts/.build/
+scripts/results/*.log
