@@ -26,10 +26,13 @@
 | 3 | MCTS Lv4〜6、時間制、進捗表示、キャンセル | 完了 |
 | 4 | 対局履歴・棋譜再生・続きから・局面から対局 | 完了 |
 | 5 | オンライン対戦(Firebase RTDB)。本番 Firebase で 2 クライアント検証済み | 完了 |
-| 6 | レベル校正(各 Lv の強さの妥当性確認・調整) | 未着手 |
+| 6 | レベル校正(自動対局で隣接 Lv の勝率を測り `levels.ts` を調整。記録は `docs/level_calibration.md`) | 完了 |
 
 - レベル設定は `src/engine/levels.ts`。スマホ実測: Lv6 5 秒で約 20 回読み(1 評価 ≈ 250 ms)。
-  それに合わせ Lv4 = 12 sims、Lv5 = 40 sims に調整済み。
+  それに合わせ Lv4 = 12 sims、Lv5 = 40 sims。Lv6 は時間制だが `minSims` で最低回数を保証し、遅い端末でも Lv5 より弱くならない。
+- レベル校正は `npm run selfplay -- --pairs 3:4,4:5 --games 20 --jobs 4`(Node、`scripts/selfplay.ts`)。
+  端末実機では URL に `?calib=1`(またはバージョン表示 5 タップ)で隠しメニュー「レベル校正(自動対局)」が開く。
+  校正結果(隣接 Lv 間の勝率、温度・回数の比較)は `docs/level_calibration.md` に記録し、設定を変えたら追記する。
 - Pages 公開先: https://arataex5.github.io/twixt_new/
 
 ## 運用ルール
@@ -58,7 +61,8 @@
 ## コード構成
 
 - `src/core/` ルールエンジン(依存なし・純粋関数)。座標表記は Little Golem 互換(`A1`〜`X24`)。
-- `src/engine/` CPU(`net.ts` 推論、`mcts.ts`、`levels.ts`、`engine.worker.ts`、`EngineClient.ts`)。
+- `src/engine/` CPU(`net.ts` 推論、`mcts.ts`、`levels.ts`、`think.ts` 着手選択、`engine.worker.ts`、`EngineClient.ts`)。
+  `think.ts` は Worker と `scripts/selfplay.ts`(Node)の両方から使うので、DOM や Worker 固有 API に依存させない。
 - `src/ui/` 画面(React)。`GameScreen.tsx` が対局画面の中心。setState の更新関数内で throw しない(画面が真っ黒になる)。
 - `src/net/` オンライン対戦。`src/store/` 履歴保存。
 - `android/` Capacitor 生成物。`npm run build:cap` で同期。
