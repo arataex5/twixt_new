@@ -1,6 +1,7 @@
 // エンジン同士の自動対局(レベル校正用)。Node 上で ONNX Runtime Web(wasm)を動かす。
 // 実行: npm run selfplay -- --pairs 3:4,4:5 --games 20 --jobs 4
-//   レベル指定: 1〜6 = levels.ts の定義、sN = MCTS N 回、tN = 時間制 N ms(例 s20, t5000)
+//   レベル指定: 1〜6 = levels.ts の定義、sN = MCTS N 回、tN = 時間制 N ms(例 s20, t5000)、
+//             pT_K = Policy のみ・温度 T・上位 K 手から抽選(例 p1.5_20)
 //   出力: 各ペアの勝率(A 側から見て)と 95% 信頼区間、1 手あたりの評価回数と時間
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -51,6 +52,8 @@ function parseArgs(argv: string[]): Args {
 }
 
 export function specOf(token: string): LevelSpec {
+  const pm = /^p([\d.]+)_(\d+)$/.exec(token);
+  if (pm) return { level: 0, name: `policy T=${pm[1]} top${pm[2]}`, sims: 0, temperature: Number(pm[1]), topK: Number(pm[2]), description: "" };
   const m = /^([st])(\d+)$/.exec(token);
   if (m) {
     const n = Number(m[2]);

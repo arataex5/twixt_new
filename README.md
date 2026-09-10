@@ -11,6 +11,18 @@ npm test           # ルールエンジンのテスト
 npm run build      # GitHub Pages 用ビルド (dist/)
 ```
 
+### CPU のレベル校正(自動対局)
+
+```bash
+npm run selfplay -- --pairs 3:4,4:5 --games 20 --jobs 4 --out scripts/results/x.json
+```
+
+エンジン同士を白黒交互に対局させ、A 側の勝率と 95% 信頼区間を表にする(`scripts/selfplay.ts`)。
+レベル指定は `1`〜`6`(`src/engine/levels.ts`)のほか、`s20`(MCTS 20 回)、`t5000`(時間制 5 秒)、
+`p1.5_20`(Policy のみ・温度 1.5・上位 20 手)が使える。
+端末実機で測るときは、アプリの URL に `?calib=1` を付ける(またはホーム画面のバージョン表示を 5 回タップ)と
+「レベル校正(自動対局)」画面が開く。結果と調整の記録は `docs/level_calibration.md`。
+
 ## ビルド・配布(GitHub Actions)
 
 - `main` に push → `.github/workflows/pages.yml` が PWA を GitHub Pages に配置  
@@ -34,7 +46,8 @@ npm run build      # GitHub Pages 用ビルド (dist/)
 - `src/ui/` 画面(React)
 - `src/net/` オンライン対戦(Firebase Realtime Database)
 - `src/store/` 履歴・進行中対局の保存
-- `src/engine/` CPU(twixtbot モデルを ONNX Runtime Web で推論。Lv1〜3 は Policy のみ、MCTS は今後)
+- `src/engine/` CPU(twixtbot モデルを ONNX Runtime Web で推論。Lv1〜3 は Policy のみ、Lv4〜6 は MCTS。着手選択は `think.ts`)
+- `scripts/selfplay.ts` エンジン同士の自動対局(レベル校正用、Node で実行)
 - `public/models/twixtbot.onnx` 学習済みモデル(BonyJordan/twixtbot, MIT)
 - `public/ort/` ONNX Runtime Web の wasm
 - `android/` Capacitor が生成した Android プロジェクト
