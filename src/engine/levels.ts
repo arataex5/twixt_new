@@ -7,6 +7,8 @@ export interface LevelSpec {
   timeMs?: number;
   /** 時間制のとき、時間が切れてもこの回数までは読む(遅い端末で下のレベルより弱くならないため) */
   minSims?: number;
+  /** MCTS の探索定数(既定 1.0) */
+  cpuct?: number;
   /** 着手選択の温度(0 = 貪欲) */
   temperature: number;
   /** 温度サンプリング時に候補とする上位手数 */

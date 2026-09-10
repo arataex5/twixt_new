@@ -48,7 +48,7 @@ export async function chooseMove(net: Net, state: GameState, spec: LevelSpec, ho
   // Lv4 以上: MCTS
   if (spec.sims > 0 || spec.timeMs) {
     const mcts = new Mcts(net, {
-      cpuct: 1.0,
+      cpuct: spec.cpuct ?? 1.0,
       smartRoot: true,
       timeMs: spec.timeMs,
       minSims: spec.minSims,
