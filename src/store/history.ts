@@ -14,7 +14,7 @@ export interface GameRecord {
   /** 開始/終了時刻(ISO) */
   startedAt: string;
   endedAt: string;
-  mode: "local" | "cpu";
+  mode: "local" | "cpu" | "online";
   settings: GameSettings;
   cpu?: CpuInfo;
   /** 棋譜(空白区切り) */

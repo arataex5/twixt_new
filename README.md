@@ -20,10 +20,18 @@ npm run build      # GitHub Pages 用ビルド (dist/)
 
 初回のみ、リポジトリの Settings → Pages → Source を **GitHub Actions** にしてください。
 
+## オンライン対戦(Firebase)
+
+- Firebase プロジェクト `twixt-online`(Realtime Database + 匿名認証)を使用。接続設定は `src/net/firebase.ts`。
+- セキュリティルールは `database.rules.json`。Firebase コンソール → Realtime Database → 「ルール」タブに内容を貼り付けて「公開」する。
+- 開発時は `?mock=1` を URL に付けると Firebase を使わず、同一ブラウザの複数タブ間で localStorage 同期して動作確認できる。
+
 ## 構成
 
 - `src/core/` ルールエンジン(依存なし・純粋関数)
 - `src/ui/` 画面(React)
+- `src/net/` オンライン対戦(Firebase Realtime Database)
+- `src/store/` 履歴・進行中対局の保存
 - `src/engine/` CPU(twixtbot モデルを ONNX Runtime Web で推論。Lv1〜3 は Policy のみ、MCTS は今後)
 - `public/models/twixtbot.onnx` 学習済みモデル(BonyJordan/twixtbot, MIT)
 - `public/ort/` ONNX Runtime Web の wasm

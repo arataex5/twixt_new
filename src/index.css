@@ -52,3 +52,9 @@ button.danger { border-color: var(--danger); color: var(--danger); }
 .record code .cur { background: var(--accent); color: #fff; border-radius: 3px; }
 .record code span { cursor: pointer; }
 textarea { width: 100%; font: inherit; background: var(--panel); color: var(--fg); border: 1px solid #3a3d45; border-radius: 6px; padding: 6px; box-sizing: border-box; }
+
+.card { background: var(--panel); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.card h3 { margin: 0 0 4px; font-size: 1rem; }
+.card .row { background: #1b1d22; }
+.roomcode { font-size: 2.6rem; letter-spacing: 0.3em; text-align: center; font-family: ui-monospace, monospace; background: var(--panel); padding: 16px; border-radius: 10px; }
+.codeinput { font-size: 1.4rem; letter-spacing: 0.25em; text-align: center; font-family: ui-monospace, monospace; width: 100%; box-sizing: border-box; text-transform: uppercase; }

@@ -5,6 +5,7 @@ import { strToMoves } from "./core/notation";
 import { loadInProgress } from "./store/history";
 import { HistoryScreen } from "./ui/HistoryScreen";
 import { ReplayScreen } from "./ui/ReplayScreen";
+import { OnlineScreen } from "./ui/OnlineScreen";
 import { AVAILABLE_LEVELS } from "./engine/levels";
 import { GameScreen, type CpuConfig } from "./ui/GameScreen";
 
@@ -14,6 +15,7 @@ type Screen =
   | { name: "setup"; mode: Mode }
   | { name: "game"; mode: Mode; settings: GameSettings; cpu?: CpuConfig; initialMoves?: Move[]; startedAt?: string; nonce?: number }
   | { name: "history" }
+  | { name: "online" }
   | { name: "replay"; title: string; settings: GameSettings; moves: Move[] };
 
 const STORAGE_KEY = "twixt.settings.v1";
@@ -39,7 +41,7 @@ function replayToMove(settings: GameSettings, moves: Move[]): Player {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>({ name: "home" });
+  const [screen, setScreen] = useState<Screen>(() => (new URLSearchParams(location.search).get("room") ? { name: "online" } : { name: "home" }));
   const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
   const setPrefs = (p: Prefs) => {
     setPrefsState(p);
@@ -59,6 +61,10 @@ export default function App() {
         onExit={() => setScreen({ name: "home" })}
       />
     );
+  }
+
+  if (screen.name === "online") {
+    return <OnlineScreen settings={settings} onSettingsChange={setSettings} onExit={() => setScreen({ name: "home" })} />;
   }
 
   if (screen.name === "history") {
@@ -156,7 +162,7 @@ export default function App() {
       )}
       <button className={`${inProgress ? "" : "primary "}big`} onClick={() => setScreen({ name: "setup", mode: "cpu" })}>CPU と対戦</button>
       <button className="big" onClick={() => setScreen({ name: "setup", mode: "local" })}>ローカル対戦</button>
-      <button className="big" disabled>オンライン対戦(準備中)</button>
+      <button className="big" onClick={() => setScreen({ name: "online" })}>オンライン対戦(ルームID)</button>
       <button className="big" onClick={() => setScreen({ name: "history" })}>対局履歴・棋譜再生</button>
       <footer className="muted small">v{__APP_VERSION__} · CPU: twixtbot model (MIT) by Jordan Lampe / twixtbot-ui by stevens68</footer>
     </div>

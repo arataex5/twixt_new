@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ($code.length == 6) && (!data.exists() || data.child('players/white').val() == auth.uid || data.child('players/black').val() == auth.uid || (data.child('status').val() == 'waiting' && (newData.child('players/white').val() == auth.uid || newData.child('players/black').val() == auth.uid)))",
+        ".validate": "newData.hasChildren(['settings', 'players', 'status', 'moves']) || !newData.exists()",
+        "moves": { ".validate": "newData.isString() && newData.val().length < 20000" },
+        "status": { ".validate": "newData.val() == 'waiting' || newData.val() == 'playing' || newData.val() == 'finished'" }
+      }
+    }
+  }
+}
