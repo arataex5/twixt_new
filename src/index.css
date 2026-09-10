@@ -58,3 +58,10 @@ textarea { width: 100%; font: inherit; background: var(--panel); color: var(--fg
 .card .row { background: #1b1d22; }
 .roomcode { font-size: 2.6rem; letter-spacing: 0.3em; text-align: center; font-family: ui-monospace, monospace; background: var(--panel); padding: 16px; border-radius: 10px; }
 .codeinput { font-size: 1.4rem; letter-spacing: 0.25em; text-align: center; font-family: ui-monospace, monospace; width: 100%; box-sizing: border-box; text-transform: uppercase; }
+
+/* レベル校正モード(?calib=1) */
+.calib-table { border-collapse: collapse; margin: 8px 0; }
+.calib-table th, .calib-table td { padding: 4px 10px; text-align: right; border-bottom: 1px solid #444; }
+.calib-table td:first-child, .calib-table th:first-child { text-align: left; }
+.calib-list { font-size: 0.85em; margin: 8px 0; padding-left: 1.4em; }
+.calib textarea { width: 100%; font-family: monospace; font-size: 0.75em; }

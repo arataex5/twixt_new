@@ -8,6 +8,7 @@ import { ReplayScreen } from "./ui/ReplayScreen";
 import { OnlineScreen } from "./ui/OnlineScreen";
 import { AVAILABLE_LEVELS } from "./engine/levels";
 import { GameScreen, type CpuConfig } from "./ui/GameScreen";
+import { CalibScreen, parseCalibParams } from "./ui/CalibScreen";
 
 type Mode = "local" | "cpu";
 type Screen =
@@ -16,6 +17,7 @@ type Screen =
   | { name: "game"; mode: Mode; settings: GameSettings; cpu?: CpuConfig; initialMoves?: Move[]; startedAt?: string; nonce?: number }
   | { name: "history" }
   | { name: "online" }
+  | { name: "calib" }
   | { name: "replay"; title: string; settings: GameSettings; moves: Move[] };
 
 const STORAGE_KEY = "twixt.settings.v1";
@@ -41,7 +43,11 @@ function replayToMove(settings: GameSettings, moves: Move[]): Player {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>(() => (new URLSearchParams(location.search).get("room") ? { name: "online" } : { name: "home" }));
+  const [screen, setScreen] = useState<Screen>(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get("calib") === "1") return { name: "calib" };
+    return q.get("room") ? { name: "online" } : { name: "home" };
+  });
   const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
   const setPrefs = (p: Prefs) => {
     setPrefsState(p);
@@ -61,6 +67,10 @@ export default function App() {
         onExit={() => setScreen({ name: "home" })}
       />
     );
+  }
+
+  if (screen.name === "calib") {
+    return <CalibScreen params={parseCalibParams(location.search)} onExit={() => setScreen({ name: "home" })} />;
   }
 
   if (screen.name === "online") {
