@@ -1,0 +1,770 @@
+{
+ "args": {
+  "pairs": [
+   [
+    "4",
+    "s20"
+   ]
+  ],
+  "games": 30,
+  "jobs": 1,
+  "pie": true,
+  "rules": "standard",
+  "maxPlies": 400,
+  "out": "scripts/results/batch5b.json"
+ },
+ "elapsedSec": 3001.899,
+ "table": "| ペア (A vs B) | 局数 | A 勝率 | 95% CI | A 白番勝 | A 黒番勝 | 引分 | 平均手数 | A: 評価/手, ms/手 | B: 評価/手, ms/手 |\n|---|---|---|---|---|---|---|---|---|---|\n| Lv4 vs Lvs20 | 30 | 37% | 22–54% | 7/15 | 4/15 | 0 | 57 | 10.9, 1438 | 15.8, 2087 |",
+ "results": [
+  {
+   "pair": 0,
+   "game": 0,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 61,
+   "moves": "P6 K17 J15 L14 P16 O11 Q11 S11 O12 N13 S10 P14 T14 Q16 S16 R20 U20 T21 Q18 O19 S19 V20 M18 N17 L16 M20 L20 K21 J21 F21 K23 P9 J11 K11 H12 I10 G9 F9 E10 H8 F8 F4 H7 K4 F3 G2 E5 E3 D3 C2 B2 E6 D7 J13 I13 G11 F11 M15 D1 V3 I24",
+   "stats": {
+    "a": {
+     "moves": 31,
+     "evals": 288,
+     "ms": 39342.273987,
+     "sims": 223
+    },
+    "b": {
+     "moves": 30,
+     "evals": 531,
+     "ms": 71502.81682000002,
+     "sims": 501
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 1,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 46,
+   "moves": "N6 K17 I13 G17 P16 N9 R10 Q6 R8 P8 S6 P4 M13 J9 U7 Q12 S13 T13 R11 R14 P12 O13 E17 M12 L11 L10 G9 G6 F7 E7 H6 I5 J5 K4 L4 M3 N3 O2 D8 C8 B9 A9 U12 V12 W11 X11",
+   "stats": {
+    "a": {
+     "moves": 23,
+     "evals": 189,
+     "ms": 25284.118701000014,
+     "sims": 166
+    },
+    "b": {
+     "moves": 23,
+     "evals": 447,
+     "ms": 59807.08313399994,
+     "sims": 390
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 2,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 55,
+   "moves": "Q19 K8 J10 L11 P9 P16 N14 M13 L13 O14 K11 L18 N17 M17 I17 I19 M19 M15 H15 J17 E18 K9 I8 I13 I12 G14 F14 I15 G12 I4 K7 G18 F16 E22 F20 G23 H21 I22 J22 K23 L23 H11 H10 K3 N4 M4 M6 O3 P3 Q2 R2 M20 P1 V20 J24",
+   "stats": {
+    "a": {
+     "moves": 28,
+     "evals": 256,
+     "ms": 34369.434123999876,
+     "sims": 194
+    },
+    "b": {
+     "moves": 27,
+     "evals": 508,
+     "ms": 68079.26308900004,
+     "sims": 481
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 3,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 57,
+   "moves": "P6 K17 I13 J15 P16 O13 Q13 Q8 K14 P19 T18 P15 R15 L10 Q9 R10 O12 O7 I9 M12 L16 M16 N15 J9 G10 H8 F8 F4 H7 R18 R17 T22 S20 R23 Q21 P22 O22 N23 M23 I5 I4 H3 J6 J4 K4 L3 M3 N2 O2 H10 I11 J11 G12 O17 M1 D23 O24",
+   "stats": {
+    "a": {
+     "moves": 28,
+     "evals": 341,
+     "ms": 46511.66991300008,
+     "sims": 313
+    },
+    "b": {
+     "moves": 29,
+     "evals": 395,
+     "ms": 53995.45895599993,
+     "sims": 332
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 4,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 54,
+   "moves": "Q6 K17 J15 L14 P16 P9 N11 M12 L12 O11 K14 L7 N8 M8 M6 N10 J9 K9 H10 H14 I13 L19 M15 P19 T18 O17 N17 Q16 I17 H19 R15 S15 T14 U14 V13 W13 H20 I21 G18 G20 L20 M21 M22 J19 E19 E21 D21 C22 B22 A23 O19 N20 M7 X15",
+   "stats": {
+    "a": {
+     "moves": 27,
+     "evals": 321,
+     "ms": 42640.70195899985,
+     "sims": 260
+    },
+    "b": {
+     "moves": 27,
+     "evals": 363,
+     "ms": 47938.72190599993,
+     "sims": 336
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 5,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 63,
+   "moves": "P6 K17 I13 J15 P16 O13 Q13 Q8 K14 P19 T18 P15 R15 O21 N17 T21 M19 L21 U20 V20 S21 R22 O23 L14 M13 J9 M9 N11 G14 L10 G9 N15 G18 H18 I17 J19 H20 I21 I22 F9 E10 H8 F8 F4 H7 J23 I5 H22 F21 F23 E23 I3 J3 K2 L2 F12 H11 H16 F16 N20 J1 P23 G24",
+   "stats": {
+    "a": {
+     "moves": 31,
+     "evals": 382,
+     "ms": 50098.94859100052,
+     "sims": 351
+    },
+    "b": {
+     "moves": 32,
+     "evals": 433,
+     "ms": 57091.32109299989,
+     "sims": 367
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 6,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 50,
+   "moves": "Q19 K8 J10 L11 N11 J12 H11 N15 R15 M9 O9 Q12 Q13 Q8 H15 G8 N7 O13 G9 H6 E8 D6 D5 E4 C7 C5 B5 A4 M13 K14 R11 R10 S9 S7 T7 U6 V6 W5 L16 L14 H5 F6 I7 I9 L13 K12 I13 X7 J15 L10",
+   "stats": {
+    "a": {
+     "moves": 25,
+     "evals": 331,
+     "ms": 43300.23647399992,
+     "sims": 271
+    },
+    "b": {
+     "moves": 25,
+     "evals": 339,
+     "ms": 44489.1865780002,
+     "sims": 313
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 7,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 64,
+   "moves": "Q6 K17 J15 L14 P16 P9 N11 M12 L12 O11 K14 L7 N8 M8 M6 N10 J9 K9 H10 G14 I13 J19 M15 P18 N18 M18 O18 O17 N17 N19 T18 Q16 T13 R14 U15 T9 T8 S7 U10 U6 S9 R8 V7 W7 G18 H18 E17 G16 F15 F14 E13 E12 D11 D10 C9 C8 B7 B6 Q14 Q12 K7 A8 G12 X9",
+   "stats": {
+    "a": {
+     "moves": 32,
+     "evals": 285,
+     "ms": 37253.15776699979,
+     "sims": 253
+    },
+    "b": {
+     "moves": 32,
+     "evals": 584,
+     "ms": 76325.10451399977,
+     "sims": 518
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 8,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 54,
+   "moves": "Q19 K8 H12 G8 O9 N11 L12 L10 P11 P16 O13 N15 M14 L14 J13 I17 E17 F21 H20 I20 I18 J19 G22 G18 F19 F14 F15 H15 E13 E12 D11 D10 C9 C8 B7 B6 T16 S13 S14 R15 T12 T11 U10 U9 V8 V7 W6 W5 K15 K16 F11 X7 G9 A8",
+   "stats": {
+    "a": {
+     "moves": 27,
+     "evals": 345,
+     "ms": 44993.987666999805,
+     "sims": 284
+    },
+    "b": {
+     "moves": 27,
+     "evals": 340,
+     "ms": 44565.58878900029,
+     "sims": 313
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 9,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 55,
+   "moves": "N6 K17 I13 G17 P16 N9 R10 Q6 R8 P8 S6 P4 U7 Q12 S13 T13 G9 G6 E6 E7 E10 C6 J6 L14 K14 M16 O14 M12 R11 Q10 S9 R14 P12 P19 Q18 R18 O19 N20 M20 L21 K21 J22 I22 H23 G23 T4 T5 V3 S3 S2 R1 T9 T7 S11 I24",
+   "stats": {
+    "a": {
+     "moves": 27,
+     "evals": 297,
+     "ms": 38889.771440999815,
+     "sims": 270
+    },
+    "b": {
+     "moves": 28,
+     "evals": 421,
+     "ms": 54953.98585499963,
+     "sims": 359
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 10,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 53,
+   "moves": "Q19 K8 J10 L11 P9 P16 N14 M13 L13 O14 K11 L18 N17 M17 I17 I19 M19 N15 H15 J17 E18 K9 I8 I13 I12 G14 F14 I15 G12 I4 K7 F18 G19 H19 F16 F20 D20 D21 C22 C23 B24 M4 L5 K3 N4 O3 P3 Q2 R2 H11 H10 B22 P1",
+   "stats": {
+    "a": {
+     "moves": 27,
+     "evals": 255,
+     "ms": 33428.577743,
+     "sims": 194
+    },
+    "b": {
+     "moves": 26,
+     "evals": 478,
+     "ms": 62859.25774800021,
+     "sims": 452
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 11,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 59,
+   "moves": "Q6 K17 H13 G17 O16 N14 L13 L15 P14 P9 O12 N10 M11 L11 J12 I8 E8 F4 H5 I5 I7 J6 D6 D3 I3 F11 J10 H10 L9 N6 M7 L5 O6 P5 Q5 R4 S4 T3 U3 V2 W2 O19 O20 N21 P18 P20 R19 R21 S21 T22 U22 V23 W23 J11 K12 Q7 U24 S6 U1",
+   "stats": {
+    "a": {
+     "moves": 29,
+     "evals": 307,
+     "ms": 39783.27907100064,
+     "sims": 278
+    },
+    "b": {
+     "moves": 30,
+     "evals": 460,
+     "ms": 59964.25515199988,
+     "sims": 396
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 12,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 56,
+   "moves": "Q6 K17 J15 L14 N14 K12 G12 H9 F9 F4 M16 O10 G6 I5 H8 L19 L16 H3 J7 L6 M8 P19 G18 G15 H16 G11 I13 J10 S10 P12 T13 T10 U9 S15 U16 T18 R12 Q14 L10 M11 E11 K8 T17 V17 S17 R17 W17 X18 D5 D3 C3 B2 K5 K4 F18 A4",
+   "stats": {
+    "a": {
+     "moves": 28,
+     "evals": 336,
+     "ms": 43970.34252200043,
+     "sims": 274
+    },
+    "b": {
+     "moves": 28,
+     "evals": 441,
+     "ms": 57829.138274999335,
+     "sims": 413
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 13,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 69,
+   "moves": "Q6 K17 J15 L14 P16 P9 N11 M12 L12 O11 K14 L7 N8 M8 M6 N10 J9 K9 H10 H14 G12 L19 M15 P19 T18 R19 S20 S21 T22 S17 S16 R15 R14 P14 F17 F21 H18 I22 F22 H20 E20 E17 D18 I8 G8 G4 I7 G23 H16 E22 D22 C23 B23 J13 J11 K15 L16 K5 H5 I5 F4 E3 D3 C2 B2 F15 D1 T23 D24",
+   "stats": {
+    "a": {
+     "moves": 34,
+     "evals": 391,
+     "ms": 51185.752423000056,
+     "sims": 357
+    },
+    "b": {
+     "moves": 35,
+     "evals": 494,
+     "ms": 64671.19283300056,
+     "sims": 425
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 14,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 50,
+   "moves": "L19 N8 S8 N4 Q7 S4 S3 Q5 T5 Q11 L9 L13 O12 O10 Q13 M11 G13 H11 F10 E10 S12 T8 U9 S6 P5 P3 V7 U5 W5 W4 L5 M6 D11 G9 E9 F7 D7 D6 C5 C4 B3 B2 J12 K12 I10 I13 M7 A4 B22 X6",
+   "stats": {
+    "a": {
+     "moves": 25,
+     "evals": 327,
+     "ms": 42727.86236499995,
+     "sims": 268
+    },
+    "b": {
+     "moves": 25,
+     "evals": 314,
+     "ms": 41309.16750099999,
+     "sims": 289
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 15,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 57,
+   "moves": "N6 K17 I13 J15 P16 P13 M13 N17 N15 P18 F16 G20 L19 L18 F18 E19 D19 C20 H19 J17 G21 G12 G14 J11 K12 L10 P10 N9 R11 P8 R7 O11 S13 S7 T8 Q6 U6 U3 U2 T5 V4 F22 R15 H21 J20 R9 S9 K22 M21 M23 N23 H16 H17 R17 S1 Q23 L24",
+   "stats": {
+    "a": {
+     "moves": 28,
+     "evals": 332,
+     "ms": 43346.05486500077,
+     "sims": 304
+    },
+    "b": {
+     "moves": 29,
+     "evals": 380,
+     "ms": 49786.12080500019,
+     "sims": 317
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 16,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 57,
+   "moves": "Q19 K8 J10 L11 P9 P16 N14 M13 P15 O12 S12 Q14 L13 P12 K11 M19 K18 J20 J21 L19 M17 N17 I19 L16 H15 H11 H9 H5 F10 F6 M10 N8 K6 L6 M5 J6 N7 J15 J14 H16 G17 G18 F19 F20 E21 E22 D23 L9 O9 M3 L3 K2 J2 J12 F24 K10 L1",
+   "stats": {
+    "a": {
+     "moves": 29,
+     "evals": 273,
+     "ms": 36006.9851350009,
+     "sims": 210
+    },
+    "b": {
+     "moves": 28,
+     "evals": 517,
+     "ms": 68104.924444,
+     "sims": 489
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 17,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 61,
+   "moves": "L19 N8 O10 M11 H13 H11 H9 I13 L11 K12 R13 Q17 O16 O13 P14 Q9 Q11 O6 M9 J6 L7 L5 R7 P7 G7 H7 R9 T6 S7 R5 O4 N4 Q5 P3 R3 R2 S1 S8 S9 T10 Q10 R11 P12 R8 N18 I9 M21 Q6 P10 S6 O12 F6 L23 Q8 N24 T8 O11 F10 N11 D11 P13",
+   "stats": {
+    "a": {
+     "moves": 30,
+     "evals": 334,
+     "ms": 44081.859629999846,
+     "sims": 303
+    },
+    "b": {
+     "moves": 31,
+     "evals": 467,
+     "ms": 61367.468054000055,
+     "sims": 401
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 18,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 65,
+   "moves": "Q6 K17 J15 L14 N14 J13 H14 H12 F13 F11 F9 E9 R14 P17 T18 S16 T13 U17 P18 O19 V17 W16 Q16 Q20 R19 S21 W21 Q8 Q10 P6 O5 R10 M10 M8 K9 K7 I8 H6 H7 G8 I5 J5 J7 H4 G4 F3 E3 D2 C2 U21 U22 T23 V19 V22 V23 O11 M12 Q15 P13 N10 K11 M16 T24 F22 E1",
+   "stats": {
+    "a": {
+     "moves": 33,
+     "evals": 318,
+     "ms": 41594.56732999929,
+     "sims": 251
+    },
+    "b": {
+     "moves": 32,
+     "evals": 575,
+     "ms": 75352.19256599946,
+     "sims": 543
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 19,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 47,
+   "moves": "P6 K17 I13 J15 P16 O13 Q13 Q8 K14 P19 T18 P15 R15 O21 N17 T21 M19 L21 J20 K21 H19 L10 Q9 R10 M13 J9 O8 P11 N11 J19 H15 N10 M9 I22 G21 G23 F23 G17 I17 P4 P2 Q6 O4 M8 D24 I2 N1",
+   "stats": {
+    "a": {
+     "moves": 23,
+     "evals": 271,
+     "ms": 35658.64112399961,
+     "sims": 248
+    },
+    "b": {
+     "moves": 24,
+     "evals": 331,
+     "ms": 43300.7275079994,
+     "sims": 273
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 20,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 55,
+   "moves": "P6 K17 I13 J15 P16 O13 Q13 Q8 K14 P19 T18 P15 R15 O9 G12 H8 K8 O21 N17 K21 F18 F21 F22 G18 H19 F16 I17 H16 L16 J7 M9 J19 S20 S23 T22 U22 R23 K9 L11 L6 N7 O3 Q4 Q2 R2 M12 M13 R17 S17 S19 U16 O17 P24 X4 P1",
+   "stats": {
+    "a": {
+     "moves": 28,
+     "evals": 270,
+     "ms": 35599.88957500062,
+     "sims": 208
+    },
+    "b": {
+     "moves": 27,
+     "evals": 520,
+     "ms": 68422.87849100004,
+     "sims": 493
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 21,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 51,
+   "moves": "Q19 K8 H12 G8 O9 N11 L12 L10 P11 P16 O13 N15 M14 L14 J13 I17 E17 F21 H20 I20 I18 J19 G22 F14 J15 H15 L16 M18 M19 N20 K18 L21 J20 G23 H24 J14 K13 O6 O5 N4 P7 P5 R6 R4 S4 T3 U3 V2 W2 D3 U1",
+   "stats": {
+    "a": {
+     "moves": 25,
+     "evals": 261,
+     "ms": 34683.93246599962,
+     "sims": 236
+    },
+    "b": {
+     "moves": 26,
+     "evals": 405,
+     "ms": 53600.03062000009,
+     "sims": 345
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 22,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 72,
+   "moves": "Q19 K8 J10 L11 P9 P16 N14 M13 L13 O14 K11 L18 N17 M17 M19 N15 J16 K16 H15 H11 I12 L6 M10 P6 T7 R6 U5 S8 S9 R10 R11 P11 T16 R16 I8 H6 R17 S14 H7 G8 L5 K4 G9 G4 M7 M5 P5 O4 Q7 Q5 Q13 U13 P13 P12 Q15 Q14 O11 O13 I5 I3 R5 S4 V3 E9 E10 C10 U14 W14 C11 A11 O12 X12",
+   "stats": {
+    "a": {
+     "moves": 36,
+     "evals": 445,
+     "ms": 58690.93085699715,
+     "sims": 375
+    },
+    "b": {
+     "moves": 36,
+     "evals": 489,
+     "ms": 65042.81803700188,
+     "sims": 453
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 23,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 47,
+   "moves": "N6 K17 F17 K21 H18 F21 F22 H20 E20 H14 N15 N13 P14 P12 J13 J10 I11 H11 K10 J15 L14 P19 N19 O21 L20 L19 P18 L9 M9 M22 Q20 R22 R23 S20 P22 N8 O8 N4 N2 M6 O4 Q16 O16 L12 P24 E18 L1",
+   "stats": {
+    "a": {
+     "moves": 23,
+     "evals": 265,
+     "ms": 35106.66877499968,
+     "sims": 242
+    },
+    "b": {
+     "moves": 24,
+     "evals": 336,
+     "ms": 44309.036423999816,
+     "sims": 278
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 24,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 47,
+   "moves": "P6 K17 I13 J15 P16 O13 Q13 P19 T18 Q8 K14 P15 R15 O21 N17 T21 M19 L21 J20 K21 H19 L10 Q9 R10 M13 J9 O8 P11 N11 J19 H15 N10 M9 I22 G21 G23 F23 G17 I17 P4 P2 Q6 O4 L14 D24 N13 N1",
+   "stats": {
+    "a": {
+     "moves": 24,
+     "evals": 234,
+     "ms": 31095.648119000718,
+     "sims": 176
+    },
+    "b": {
+     "moves": 23,
+     "evals": 452,
+     "ms": 59737.16775400331,
+     "sims": 429
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 25,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "white",
+   "reason": "connect",
+   "plies": 65,
+   "moves": "N6 K17 I13 G17 P16 N9 R10 Q6 R8 P8 S6 P4 U7 Q12 S13 T13 M13 O13 N15 J9 N10 O11 M8 M10 F9 H10 E11 G12 F14 F15 D15 H14 D19 C14 B14 E13 C12 C19 E17 E20 F20 G21 H21 I22 J22 K23 L23 G5 I6 J4 G7 H3 L5 M3 M2 K4 N4 K7 K5 L6 L7 L8 J24 M6 K1",
+   "stats": {
+    "a": {
+     "moves": 32,
+     "evals": 340,
+     "ms": 44870.397975998,
+     "sims": 308
+    },
+    "b": {
+     "moves": 33,
+     "evals": 508,
+     "ms": 67081.89104800113,
+     "sims": 441
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 26,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 60,
+   "moves": "P6 K17 I13 J15 P16 O13 Q13 Q8 K14 P19 T18 P15 R15 O17 O12 M8 N10 O7 I8 O21 S20 K9 G12 M12 L11 I10 H10 K11 F18 G18 H17 I17 E18 G16 D16 E13 F15 F14 D14 E12 C12 D10 B10 B9 U8 T11 T10 S9 U12 U13 L16 M16 V14 V15 W16 W17 M13 X15 E11 A11",
+   "stats": {
+    "a": {
+     "moves": 30,
+     "evals": 363,
+     "ms": 48301.43844500091,
+     "sims": 299
+    },
+    "b": {
+     "moves": 30,
+     "evals": 438,
+     "ms": 58059.99838300003,
+     "sims": 408
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 27,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 58,
+   "moves": "L19 N8 S8 N4 Q7 S4 S3 Q11 S12 Q5 O8 T8 U7 O10 M7 S10 H13 H11 H9 I13 J14 I9 J8 F12 M11 K14 N13 N17 O16 O15 P14 P16 S16 T16 U15 R17 T17 S15 U11 S21 M17 L16 R18 Q20 P19 O19 U20 U22 V22 W23 D12 B12 F13 D11 K16 X21 V9 A14",
+   "stats": {
+    "a": {
+     "moves": 29,
+     "evals": 264,
+     "ms": 36114.72017800063,
+     "sims": 235
+    },
+    "b": {
+     "moves": 29,
+     "evals": 560,
+     "ms": 76845.75756400079,
+     "sims": 497
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 28,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": true,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 60,
+   "moves": "L19 N8 S8 N4 Q7 S4 S3 Q5 T5 Q11 L9 L7 J8 J6 H7 H5 D6 H13 E8 L13 S12 T8 U9 S6 N10 P13 L12 M11 K14 K15 J16 K12 O12 N14 S16 P9 P5 P3 V7 U5 W5 W4 N6 M6 H12 I11 G14 G12 C12 F14 D15 D13 B14 C11 B10 B9 O8 X6 W22 A11",
+   "stats": {
+    "a": {
+     "moves": 30,
+     "evals": 375,
+     "ms": 50797.42689299863,
+     "sims": 311
+    },
+    "b": {
+     "moves": 30,
+     "evals": 382,
+     "ms": 51843.982714998536,
+     "sims": 352
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "game": 29,
+   "a": "4",
+   "b": "s20",
+   "aIsWhite": false,
+   "winner": "black",
+   "reason": "connect",
+   "plies": 54,
+   "moves": "Q19 K8 J10 L11 P9 P16 M13 K16 F16 G20 I19 J12 L15 L18 D15 I15 I12 H13 G13 E12 E14 I7 P17 O14 F7 H9 N16 N12 D10 F10 C12 D9 C8 C7 B6 B5 L9 M9 Q15 Q13 U13 T10 T11 S12 U9 U8 V7 V6 W5 W4 S14 X6 H2 A7",
+   "stats": {
+    "a": {
+     "moves": 27,
+     "evals": 228,
+     "ms": 30986.50458300067,
+     "sims": 201
+    },
+    "b": {
+     "moves": 27,
+     "evals": 530,
+     "ms": 72204.69565699995,
+     "sims": 469
+    }
+   }
+  }
+ ]
+}
