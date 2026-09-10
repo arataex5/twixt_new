@@ -24,7 +24,9 @@ npm run build      # GitHub Pages 用ビルド (dist/)
 
 - Firebase プロジェクト `twixt-online`(Realtime Database + 匿名認証)を使用。接続設定は `src/net/firebase.ts`。
 - セキュリティルールは `database.rules.json`。Firebase コンソール → Realtime Database → 「ルール」タブに内容を貼り付けて「公開」する。
-- 開発時は `?mock=1` を URL に付けると Firebase を使わず、同一ブラウザの複数タブ間で localStorage 同期して動作確認できる。
+- 開発時は `?mock=1` を URL に付けると Firebase を使わず、同一ブラウザの複数タブ間で localStorage 同期して動作確認できる(Firebase と同じく null の値はキーごと落とす)。
+- 注意: Firebase RTDB は `null` の値をキーごと削除するため、受信データでは空き枠が `undefined` になる。判定は `== null` で行うこと(`src/net/room.test.ts` 参照)。
+- 2026-09-10 本番 Firebase で 2 クライアント検証済み: 作成 → 参加 → 着手同期(双方向) → スワップ → 投了 → 在席表示。
 
 ## 構成
 

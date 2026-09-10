@@ -16,9 +16,20 @@ export function mockGet(code: string): RoomData | null {
   return raw ? (JSON.parse(raw) as RoomData) : null;
 }
 
+/** Firebase RTDB と同じく null の値はキーごと消す(本番との挙動差を無くすため) */
+export function stripNulls<T>(v: T): T {
+  if (Array.isArray(v)) return v.map(stripNulls) as unknown as T;
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) if (x !== null && x !== undefined) out[k] = stripNulls(x);
+    return out as T;
+  }
+  return v;
+}
+
 export function mockSet(code: string, data: RoomData | null): void {
   if (data === null) localStorage.removeItem(KEY(code));
-  else localStorage.setItem(KEY(code), JSON.stringify(data));
+  else localStorage.setItem(KEY(code), JSON.stringify(stripNulls(data)));
   // 同一タブ内の購読者にも通知(storage イベントは他タブにしか飛ばない)
   window.dispatchEvent(new CustomEvent("twixt-mock-room", { detail: code }));
 }

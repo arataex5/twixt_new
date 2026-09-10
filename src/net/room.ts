@@ -18,7 +18,8 @@ export interface RoomData {
   createdAt: number;
   expiresAt: number;
   settings: GameSettings;
-  players: { white: string | null; black: string | null };
+  /** 注意: Firebase は null の値をキーごと落とすので、受信側では undefined にもなり得る */
+  players: { white?: string | null; black?: string | null };
   status: "waiting" | "playing" | "finished";
   /** 棋譜(空白区切り)。配列より文字列の方がトランザクションが単純 */
   moves: string;
@@ -77,6 +78,26 @@ export async function createRoom(settings: GameSettings, hostColor: Player | "ra
   throw new Error("ルームコードの生成に失敗しました");
 }
 
+/**
+ * 参加トランザクションの純粋な本体(テスト用に公開)。
+ * 戻り値: undefined = 中断(満員など)。null = ルームなし(そのまま書き戻して「存在しない」を確定させる)。
+ * 空き枠は Firebase では null ではなくキー自体が無い(undefined)ので == null で判定する。
+ */
+export function joinTransition(cur: RoomData | null, uid: string): { next: RoomData | null | undefined; myColor: Player | null } {
+  if (cur === null) return { next: null, myColor: null };
+  const players = cur.players ?? {};
+  if (players.white === uid) return { next: cur, myColor: "white" };
+  if (players.black === uid) return { next: cur, myColor: "black" };
+  if (cur.status !== "waiting") return { next: undefined, myColor: null };
+  let myColor: Player;
+  if (players.white == null) { myColor = "white"; players.white = uid; }
+  else if (players.black == null) { myColor = "black"; players.black = uid; }
+  else return { next: undefined, myColor: null };
+  cur.players = players;
+  cur.status = "playing";
+  return { next: cur, myColor };
+}
+
 /** ルームに参加する。空いている色に入る。既に参加済みならその色を返す */
 export async function joinRoom(codeRaw: string): Promise<{ code: string; myColor: Player }> {
   const uid = await ensureSignedIn();
@@ -84,15 +105,11 @@ export async function joinRoom(codeRaw: string): Promise<{ code: string; myColor
   if (code.length !== 6) throw new Error("ルームコードは 6 文字です");
   let myColor: Player | null = null;
   const joinFn = (cur: RoomData | null) => {
-    if (cur === null) return cur; // 存在しない → abort 扱いにするため undefined ではなく null を返す
-    if (cur.players.white === uid) { myColor = "white"; return cur; }
-    if (cur.players.black === uid) { myColor = "black"; return cur; }
-    if (cur.status !== "waiting") return; // 満員
-    if (cur.players.white === null) { myColor = "white"; cur.players.white = uid; }
-    else if (cur.players.black === null) { myColor = "black"; cur.players.black = uid; }
-    else return;
-    cur.status = "playing";
-    return cur;
+    // runTransaction はローカルキャッシュが無いと最初 null で呼ばれる。その場合 null を返すと
+    // サーバー側の実データで再実行される(本当に無ければ null のまま commit され「存在しない」と分かる)
+    const r = joinTransition(cur, uid);
+    myColor = r.myColor;
+    return r.next;
   };
   if (MOCK) {
     const r = mockTransaction(code, joinFn);
@@ -148,33 +165,59 @@ export function subscribeRoom(code: string, uid: string, cb: (view: RoomView | n
 export async function sendMove(code: string, uid: string, move: Move, expectedIndex: number): Promise<void> {
   let reason = "";
   const fn = (cur: RoomData | null) => {
-    if (!cur) { reason = "ルームがありません"; return; }
-    if (cur.status !== "playing") { reason = "対局中ではありません"; return; }
-    const moves = strToMoves(cur.moves ?? "");
-    if (moves.length !== expectedIndex) { reason = "手数がずれています(相手の手を受信中)"; return; }
-    const state = replay(cur.settings, moves);
-    const myColor: Player | null = cur.players.white === uid ? "white" : cur.players.black === uid ? "black" : null;
-    if (!myColor) { reason = "参加者ではありません"; return; }
-    if (move.type !== "resign" && state.toMove !== myColor) { reason = "あなたの手番ではありません"; return; }
-    let next;
-    try {
-      next = applyMove(state, move.type === "resign" && state.toMove !== myColor ? { type: "resign" } : move);
-    } catch (e) {
-      reason = (e as Error).message; return;
-    }
-    // 投了は手番に関係なく「自分の負け」にする
-    if (move.type === "resign") {
-      cur.result = { winner: myColor === "white" ? "black" : "white", reason: "resign" };
-      cur.status = "finished";
-      cur.moves = [cur.moves, "resign"].filter(Boolean).join(" ");
-      return cur;
-    }
-    cur.moves = [cur.moves, moveToStr(move)].filter(Boolean).join(" ");
-    if (next.result) { cur.result = next.result; cur.status = "finished"; }
-    return cur;
+    // キャッシュ未取得の最初の呼び出し(null)は null を返してサーバーの実データで再実行させる
+    if (cur === null) return null;
+    const r = moveTransition(cur, uid, move, expectedIndex);
+    if (typeof r === "string") { reason = r; return; }
+    return r;
   };
-  const committed = MOCK ? mockTransaction(code, fn).committed : (await runTransaction(roomRef(code), fn)).committed;
+  let committed: boolean;
+  let exists = true;
+  if (MOCK) {
+    committed = mockTransaction(code, fn).committed;
+  } else {
+    const res = await runTransaction(roomRef(code), fn);
+    committed = res.committed;
+    exists = res.snapshot.exists();
+  }
   if (!committed) throw new Error(reason || "送信に失敗しました");
+  if (!exists) throw new Error("ルームがありません");
+}
+
+/**
+ * 着手トランザクションの純粋な本体(テスト用に公開)。
+ * 戻り値: 文字列 = 拒否理由(中断)。RoomData = 書き込む新しいルーム。
+ */
+export function moveTransition(cur: RoomData, uid: string, move: Move, expectedIndex: number): RoomData | string {
+  if (cur.status !== "playing") return "対局中ではありません";
+  const players = cur.players ?? {};
+  const myColor: Player | null = players.white === uid ? "white" : players.black === uid ? "black" : null;
+  if (!myColor) return "参加者ではありません";
+  let state;
+  try {
+    const moves = strToMoves(cur.moves ?? "");
+    if (moves.length !== expectedIndex) return "手数がずれています(相手の手を受信中)";
+    state = replay(cur.settings, moves);
+  } catch (e) {
+    return `棋譜が壊れています: ${(e as Error).message}`;
+  }
+  // 投了は手番に関係なく「自分の負け」にする
+  if (move.type === "resign") {
+    cur.result = { winner: myColor === "white" ? "black" : "white", reason: "resign" };
+    cur.status = "finished";
+    cur.moves = [cur.moves, "resign"].filter(Boolean).join(" ");
+    return cur;
+  }
+  if (state.toMove !== myColor) return "あなたの手番ではありません";
+  let next;
+  try {
+    next = applyMove(state, move);
+  } catch (e) {
+    return (e as Error).message;
+  }
+  cur.moves = [cur.moves, moveToStr(move)].filter(Boolean).join(" ");
+  if (next.result) { cur.result = next.result; cur.status = "finished"; }
+  return cur;
 }
 
 /** ルームを離れる(待機中で自分しかいなければ削除) */
