@@ -32,9 +32,9 @@ interface Prefs {
 function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 5, ...JSON.parse(raw) };
+    if (raw) return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 10, ...JSON.parse(raw) };
   } catch { /* ignore */ }
-  return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 5 };
+  return { settings: DEFAULT_SETTINGS, humanColor: "white", level: 3, strongestSec: 10 };
 }
 
 function replayToMove(settings: GameSettings, moves: Move[]): Player {
@@ -130,7 +130,7 @@ export default function App() {
             <p className="muted small">{AVAILABLE_LEVELS.find((l) => l.level === prefs.level)?.description}</p>
             {prefs.level === 6 && (
               <label className="row">
-                <span>最強レベルの思考時間</span>
+                <span>最強レベルの思考時間<br /><small className="muted">最低 60 回は読むため、遅い端末ではこれより長くなることがあります</small></span>
                 <select value={prefs.strongestSec} onChange={(e) => setPrefs({ ...prefs, strongestSec: Number(e.target.value) })}>
                   {[3, 5, 10, 20, 30, 60].map((s) => <option key={s} value={s}>{s} 秒</option>)}
                 </select>

@@ -52,4 +52,17 @@ describe("mcts (requires model)", () => {
     expect(r.value).toBeLessThan(-0.5);
     void xy;
   }, 120000);
+
+  it("時間制でも minSims 回までは読む(Lv6 の下限)", async () => {
+    const net = new Net();
+    await net.load(baseUrl, modelBytes);
+    const state = replay({ pieRule: false }, strToMoves("L12 M13"));
+    // 時間 1ms なら通常は数回で打ち切られるが、minSims=15 で最低 15 回読む
+    const r = await mcts_(net, { smartRoot: true, timeMs: 1, minSims: 15 }).run(state, 100000);
+    expect(r.sims).toBeGreaterThanOrEqual(15);
+    const r2 = await mcts_(net, { smartRoot: true, timeMs: 1 }).run(state, 100000);
+    expect(r2.sims).toBeLessThan(15);
+  }, 120000);
 });
+
+function mcts_(net: Net, opts: ConstructorParameters<typeof Mcts>[1]) { return new Mcts(net, opts); }

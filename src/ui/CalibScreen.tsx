@@ -1,5 +1,5 @@
 // レベル校正モード。URL に ?calib=1 を付けると起動する(開発・検証用、メニューからは出さない)。
-//   ?calib=1&a=5&b=6&n=10&t=5000&pie=0
+//   ?calib=1&a=5&b=6&n=10&t=10000&pie=1
 //   a, b: 対戦させるレベル / n: 局数 / t: Lv6 の思考時間(ms) / pie: パイルール(1=あり)
 // 色は 1 局ごとに入れ替える。結果は画面に表示し、localStorage(twixt.calib.results)にも追記する。
 import { useEffect, useRef, useState } from "react";
@@ -39,7 +39,7 @@ export function parseCalibParams(search: string): CalibParams {
     a: num("a", 5),
     b: num("b", 6),
     n: num("n", 10),
-    strongestTimeMs: num("t", 5000),
+    strongestTimeMs: num("t", 10000),
     settings: { pieRule: q.get("pie") === "1", rules: q.get("rules") === "pp" ? "pp" : "standard" },
     maxPlies: num("max", 400),
   };

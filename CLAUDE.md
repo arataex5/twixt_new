@@ -28,8 +28,9 @@
 | 5 | オンライン対戦(Firebase RTDB)。本番 Firebase で 2 クライアント検証済み | 完了 |
 | 6 | レベル校正。`?calib=1&a=5&b=6&n=10&t=5000` で自動対局(`src/ui/CalibScreen.tsx`) | 進行中 |
 
-- レベル設定は `src/engine/levels.ts`。スマホ実測: Lv6 5 秒で約 20 回読み(1 評価 ≈ 250 ms)。
-  それに合わせ Lv4 = 12 sims、Lv5 = 40 sims に調整済み。
+- レベル設定は `src/engine/levels.ts`。スマホ実測: 1 評価 ≈ 250 ms(PC は ≈ 170 ms)。Lv4 = 12 sims、Lv5 = 40 sims。
+- 校正結果 2026-09-10(PC、パイ無し): Lv5 vs Lv6(5 秒) 10 局 = 5-5、白 8 勝。Lv6 5 秒 ≈ 29 評価 < Lv5 40 sims で
+  「最強」が最強でなかった → Lv6 を既定 10 秒 + 最低 60 回読む(`minSims`)に変更。校正は先手有利を避けるため `pie=1` で回す。
 - Pages 公開先: https://arataex5.github.io/twixt_new/
 
 ## 運用ルール

@@ -68,6 +68,7 @@ async function think(state: GameState, level: number, job: { id: number; cancell
       cpuct: 1.0,
       smartRoot: true,
       timeMs: spec.timeMs,
+      minSims: spec.minSims,
       isCancelled: () => job.cancelled,
       onProgress: (done, total) => post({ type: "progress", id: job.id, done, total }),
     });
