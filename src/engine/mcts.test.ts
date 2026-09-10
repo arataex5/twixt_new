@@ -53,3 +53,15 @@ describe("mcts (requires model)", () => {
     void xy;
   }, 120000);
 });
+
+describe("mcts 時間制 (requires model)", () => {
+  it("minSims を指定すると時間切れでもその回数までは読む", async () => {
+    const net = new Net();
+    await net.load(baseUrl, modelBytes);
+    const state = replay({ pieRule: false }, strToMoves("L12 M13"));
+    const r = await new Mcts(net, { smartRoot: true, timeMs: 1, minSims: 6 }).run(state, 100000);
+    expect(r.sims).toBeGreaterThanOrEqual(6);
+    const r2 = await new Mcts(net, { smartRoot: true, timeMs: 1 }).run(state, 100000);
+    expect(r2.sims).toBeLessThan(6);
+  }, 120000);
+});

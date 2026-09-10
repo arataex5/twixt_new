@@ -27,3 +27,6 @@ dist-ssr
 android/app/src/main/assets/public/
 android/app/src/main/assets/capacitor.config.json
 android/app/src/main/assets/capacitor.plugins.json
+
+# 自動対局スクリプトの一時ビルド
+scripts/.build/

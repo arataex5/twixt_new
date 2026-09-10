@@ -10,7 +10,8 @@
     "build:cap": "tsc -b && cross-env CAP_BUILD=1 vite build && cap sync android",
     "test": "vitest run",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "selfplay": "node scripts/selfplay.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

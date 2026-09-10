@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Player } from "./core/board";
 import { DEFAULT_SETTINGS, replay, type GameSettings, type Move } from "./core/game";
 import { strToMoves } from "./core/notation";
@@ -8,6 +8,7 @@ import { ReplayScreen } from "./ui/ReplayScreen";
 import { OnlineScreen } from "./ui/OnlineScreen";
 import { AVAILABLE_LEVELS } from "./engine/levels";
 import { GameScreen, type CpuConfig } from "./ui/GameScreen";
+import { CalibrationScreen } from "./ui/CalibrationScreen";
 
 type Mode = "local" | "cpu";
 type Screen =
@@ -16,6 +17,7 @@ type Screen =
   | { name: "game"; mode: Mode; settings: GameSettings; cpu?: CpuConfig; initialMoves?: Move[]; startedAt?: string; nonce?: number }
   | { name: "history" }
   | { name: "online" }
+  | { name: "calib" }
   | { name: "replay"; title: string; settings: GameSettings; moves: Move[] };
 
 const STORAGE_KEY = "twixt.settings.v1";
@@ -41,7 +43,14 @@ function replayToMove(settings: GameSettings, moves: Move[]): Player {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>(() => (new URLSearchParams(location.search).get("room") ? { name: "online" } : { name: "home" }));
+  const [screen, setScreen] = useState<Screen>(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get("room")) return { name: "online" };
+    if (q.get("calib")) return { name: "calib" };
+    return { name: "home" };
+  });
+  // 隠しメニュー(レベル校正): バージョン表示を 5 回タップで開く
+  const versionTaps = useRef(0);
   const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
   const setPrefs = (p: Prefs) => {
     setPrefsState(p);
@@ -65,6 +74,10 @@ export default function App() {
 
   if (screen.name === "online") {
     return <OnlineScreen settings={settings} onSettingsChange={setSettings} onExit={() => setScreen({ name: "home" })} />;
+  }
+
+  if (screen.name === "calib") {
+    return <CalibrationScreen settings={settings} onExit={() => setScreen({ name: "home" })} />;
   }
 
   if (screen.name === "history") {
@@ -164,7 +177,7 @@ export default function App() {
       <button className="big" onClick={() => setScreen({ name: "setup", mode: "local" })}>ローカル対戦</button>
       <button className="big" onClick={() => setScreen({ name: "online" })}>オンライン対戦(ルームID)</button>
       <button className="big" onClick={() => setScreen({ name: "history" })}>対局履歴・棋譜再生</button>
-      <footer className="muted small">v{__APP_VERSION__} · CPU: twixtbot model (MIT) by Jordan Lampe / twixtbot-ui by stevens68</footer>
+      <footer className="muted small" onClick={() => { if (++versionTaps.current >= 5) { versionTaps.current = 0; setScreen({ name: "calib" }); } }}>v{__APP_VERSION__} · CPU: twixtbot model (MIT) by Jordan Lampe / twixtbot-ui by stevens68</footer>
     </div>
   );
 }

@@ -29,6 +29,8 @@ export interface MctsOptions {
   isCancelled?: () => boolean;
   /** 時間制(ms)。指定時は sims は上限扱い */
   timeMs?: number;
+  /** 時間制のとき、時間切れでもこの回数までは読む */
+  minSims?: number;
 }
 
 export interface MctsResult {
@@ -139,7 +141,7 @@ export class Mcts {
     while (!root.proven && done < total) {
       // Worker のメッセージ(キャンセル等)を処理できるよう、毎回イベントループに戻る
       await new Promise<void>((r) => setTimeout(r, 0));
-      if (timeMs && performance.now() - t0 > timeMs) break;
+      if (timeMs && performance.now() - t0 > timeMs && done >= (this.opts.minSims ?? 0)) break;
       if (this.opts.isCancelled?.()) break;
       await this.visit(state, root, true, timeMs ? Math.max(1, Math.floor((sims || 1e9) - done)) : sims - done);
       done++;
