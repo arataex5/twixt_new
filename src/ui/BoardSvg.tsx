@@ -237,8 +237,10 @@ export function BoardSvg(props: BoardSvgProps) {
         <line x1={edge} y1={edge} x2={edge} y2={W - edge} stroke={COLORS.black} strokeWidth={2} opacity={0.6} />
         <line x1={W - edge} y1={edge} x2={W - edge} y2={W - edge} stroke={COLORS.black} strokeWidth={2} opacity={0.6} />
         {/* 中央の目安線(縦横の真ん中) */}
-        <line x1={W / 2} y1={edge} x2={W / 2} y2={W - edge} stroke={COLORS.label} strokeWidth={1} strokeDasharray="3 5" opacity={0.45} />
-        <line x1={edge} y1={W / 2} x2={W - edge} y2={W / 2} stroke={COLORS.label} strokeWidth={1} strokeDasharray="3 5" opacity={0.45} />
+        <line x1={W / 2} y1={edge} x2={W / 2} y2={W - edge} stroke="#fff" strokeWidth={3} strokeDasharray="7 7" opacity={0.7} />
+        <line x1={edge} y1={W / 2} x2={W - edge} y2={W / 2} stroke="#fff" strokeWidth={3} strokeDasharray="7 7" opacity={0.7} />
+        <line x1={W / 2} y1={edge} x2={W / 2} y2={W - edge} stroke="#1f2329" strokeWidth={1.8} strokeDasharray="7 7" opacity={0.9} />
+        <line x1={edge} y1={W / 2} x2={W - edge} y2={W / 2} stroke="#1f2329" strokeWidth={1.8} strokeDasharray="7 7" opacity={0.9} />
         {labels}
         {holes}
         {outlines}

@@ -149,6 +149,11 @@ export default function App() {
             <option value="pp">PP(自リンク交差可・除去なし)</option>
           </select>
         </label>
+        <p className="muted small">
+          {settings.rules === "pp"
+            ? "PP(ペーパー・アンド・ペンシル): 自分のリンク同士は交差できる。リンクを外す操作はない。相手のリンクとは交差できない。"
+            : "標準: リンクはどのリンクとも交差できない。着手時に自分のリンクを選んで外し、道を空けることができる。"}
+        </p>
         <button className="primary big" onClick={start}>対局開始</button>
       </div>
     );
@@ -193,7 +198,8 @@ export default function App() {
 
 /** ホームのロゴ(小さな盤とリンク) */
 function Logo() {
-  const pegs: [number, number, "w" | "b"][] = [[1, 0, "w"], [2, 2, "w"], [3, 4, "w"], [0, 1, "b"], [2, 3, "b"], [4, 2, "b"]];
+  // ルールに沿った配置: リンクはすべてナイト跳び、交差なし、白は左右の辺列・赤は上下の辺行に置かない。白が上下を連結した局面
+  const pegs: [number, number, "w" | "b"][] = [[1, 0, "w"], [2, 2, "w"], [3, 4, "w"], [0, 3, "b"], [1, 1, "b"], [2, 3, "b"]];
   const p = (x: number, y: number) => [14 + x * 17, 14 + y * 17];
   const links: [number, number][] = [[0, 1], [1, 2], [3, 4], [4, 5]];
   return (

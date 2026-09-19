@@ -563,6 +563,33 @@ export async function sendMove(code: string, uid: string, move: Move, expectedIn
   });
 }
 
+/** 待機中のルーム設定(自分の色・ルール)を変更する。ホストのみ、相手が参加する前だけ */
+export async function updateRoomSettings(code: string, uid: string, settings: GameSettings, myColor: Player): Promise<void> {
+  const apply = (cur: RoomData): RoomData | string => {
+    if (cur.status !== "waiting") return "対局が始まっているため変更できません";
+    const players = cur.players ?? {};
+    const others = [players.white, players.black].filter((p) => p && p !== uid);
+    if (others.length > 0) return "相手が参加済みのため変更できません";
+    cur.settings = settings;
+    cur.players = { white: myColor === "white" ? uid : null, black: myColor === "black" ? uid : null };
+    return cur;
+  };
+  if (MOCK) {
+    let reason = "";
+    const r = mockTransaction(code, (cur) => { if (!cur) { reason = "ルームがありません"; return; } const t = apply(cur); if (typeof t === "string") { reason = t; return; } return t; });
+    if (!r.committed) throw new Error(reason);
+    return;
+  }
+  const s = sessions.get(code);
+  if (!s || !s.alive || s.role !== "host") throw new Error("ホストのみ変更できます");
+  const r = apply(clone(s.data));
+  if (typeof r === "string") throw new Error(r);
+  s.data = r;
+  s.myColor = myColor;
+  persist(s);
+  notify(s);
+}
+
 /** ルームを離れる。待機中・終了済みなら保存も消す(対局中は「直前のルームに戻る」用に残す) */
 export async function leaveRoom(code: string, uid: string): Promise<void> {
   if (MOCK) {

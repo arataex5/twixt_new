@@ -114,6 +114,8 @@ input[type="range"] { accent-color: var(--accent); }
 .muted { color: var(--muted); }
 .small { font-size: 0.8rem; }
 .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.row > span { flex: 1 1 auto; min-width: 4em; }
+.row > select { flex: 0 1 auto; max-width: 70%; min-width: 0; }
 .record { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
 .record summary { cursor: pointer; font-weight: 600; color: var(--muted); }
 .record code { display: block; white-space: pre-wrap; word-break: break-all; background: var(--bg); padding: 8px; border-radius: 8px; margin: 8px 0; font-size: 0.85rem; }

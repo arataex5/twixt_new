@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Player } from "../core/board";
 import type { GameSettings, Move } from "../core/game";
-import { createRoom, ensureSignedIn, joinRoom, leaveRoom, normalizeCode, sendMove, subscribeRoom, type RoomView } from "../net/room";
+import { createRoom, ensureSignedIn, joinRoom, leaveRoom, normalizeCode, sendMove, subscribeRoom, updateRoomSettings, type RoomView } from "../net/room";
 import { GameScreen } from "./GameScreen";
 
 export interface OnlineScreenProps {
@@ -68,20 +68,36 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
 
   if (phase.name === "room") {
     if (!view) return <div className="screen"><p className="muted">ルームに接続中…</p><button onClick={exitRoom}>戻る</button></div>;
+    const myColorNow: Player = view.myColor ?? phase.myColor;
     if (view.data.status === "waiting") {
       const url = `${location.origin}${location.pathname}?room=${phase.code}`;
       return (
         <div className="screen">
           <header className="bar"><button onClick={exitRoom}>← 戻る</button><h2>相手を待っています</h2></header>
           <div className="roomcode">{phase.code}</div>
-          <p className="muted">相手にこのルームコードを伝えてください。あなたは {phase.myColor === "white" ? "白(先手・上下)" : "赤(後手・左右)"} です。</p>
+          <p className="muted">相手にこのルームコードを伝えてください。あなたは {myColorNow === "white" ? "白(先手・上下)" : "赤(後手・左右)"} です。</p>
           <div className="controls">
             <button onClick={() => navigator.clipboard?.writeText(phase.code)}>コードをコピー</button>
             {"share" in navigator && (
               <button className="primary" onClick={() => (navigator as Navigator).share({ title: "TWIXT 対戦", text: `TWIXT で対戦しよう。ルームコード: ${phase.code}`, url }).catch(() => {})}>共有</button>
             )}
           </div>
-          <p className="muted small">パイルール: {view.data.settings.pieRule ? "あり" : "なし"} / ルール: {view.data.settings.rules === "pp" ? "PP" : "標準"}</p>
+          {myColorNow && (
+            <section className="card">
+              <h3>ルームの設定 <span className="muted small">(相手が入るまで変更できます)</span></h3>
+              <SettingsForm
+                hostColor={myColorNow}
+                settings={view.data.settings}
+                allowRandom={false}
+                onChange={(color, s) => {
+                  if (color === "random") return;
+                  onSettingsChange(s);
+                  updateRoomSettings(phase.code, phase.uid, s, color).catch((e) => setError((e as Error).message));
+                }}
+              />
+              {error && <div className="hint error">{error}</div>}
+            </section>
+          )}
         </div>
       );
     }
@@ -90,7 +106,7 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
       <GameScreen
         key={phase.code}
         settings={view.data.settings}
-        online={{ code: phase.code, myColor: phase.myColor, moves: view.data.moves, status: view.data.status, result: view.data.result ?? null, opponentOnline: view.opponentOnline, send }}
+        online={{ code: phase.code, myColor: myColorNow, moves: view.data.moves, status: view.data.status, result: view.data.result ?? null, opponentOnline: view.opponentOnline, send }}
         initialMoves={[]}
         onExit={exitRoom}
       />
@@ -104,25 +120,7 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
 
       <section className="card">
         <h3>ルームを作る</h3>
-        <label className="row">
-          <span>あなたの色</span>
-          <select value={hostColor} onChange={(e) => setHostColor(e.target.value as Player | "random")}>
-            <option value="random">ランダム</option>
-            <option value="white">白(先手・上下)</option>
-            <option value="black">赤(後手・左右)</option>
-          </select>
-        </label>
-        <label className="row">
-          <span>パイルール(スワップ)</span>
-          <input type="checkbox" checked={settings.pieRule} onChange={(e) => onSettingsChange({ ...settings, pieRule: e.target.checked })} />
-        </label>
-        <label className="row">
-          <span>ルール</span>
-          <select value={settings.rules} onChange={(e) => onSettingsChange({ ...settings, rules: e.target.value as GameSettings["rules"] })}>
-            <option value="standard">標準</option>
-            <option value="pp">PP</option>
-          </select>
-        </label>
+        <SettingsForm hostColor={hostColor} settings={settings} allowRandom onChange={(color, s) => { setHostColor(color); onSettingsChange(s); }} />
         <button className="primary big" onClick={() => enterRoom(() => createRoom(settings, hostColor), "ルームを作成中…")}>ルームを作る</button>
       </section>
 
@@ -139,5 +137,42 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
       )}
       <p className="muted small">ルームは 24 時間で消えます。対局中に通信が切れても、同じコードで再接続すれば続きから打てます。</p>
     </div>
+  );
+}
+
+/** ルーム設定フォーム(作成前・待機中で共通)。ソロモードの設定画面と同じ説明を付ける */
+function SettingsForm({ hostColor, settings, allowRandom, onChange }: {
+  hostColor: Player | "random";
+  settings: GameSettings;
+  allowRandom: boolean;
+  onChange: (color: Player | "random", s: GameSettings) => void;
+}) {
+  return (
+    <>
+      <label className="row">
+        <span>あなたの色</span>
+        <select value={hostColor} onChange={(e) => onChange(e.target.value as Player | "random", settings)}>
+          {allowRandom && <option value="random">ランダム</option>}
+          <option value="white">白(先手・上下)</option>
+          <option value="black">赤(後手・左右)</option>
+        </select>
+      </label>
+      <label className="row">
+        <span>パイルール(スワップ)<br /><small className="muted">後手は先手の初手を「奪う」ことができる。初手は主対角線で鏡映され赤の駒になる</small></span>
+        <input type="checkbox" checked={settings.pieRule} onChange={(e) => onChange(hostColor, { ...settings, pieRule: e.target.checked })} />
+      </label>
+      <label className="row">
+        <span>ルール</span>
+        <select value={settings.rules} onChange={(e) => onChange(hostColor, { ...settings, rules: e.target.value as GameSettings["rules"] })}>
+          <option value="standard">標準(リンク除去あり・交差不可)</option>
+          <option value="pp">PP(自リンク交差可・除去なし)</option>
+        </select>
+      </label>
+      <p className="muted small">
+        {settings.rules === "pp"
+          ? "PP(ペーパー・アンド・ペンシル): 自分のリンク同士は交差できる。リンクを外す操作はない。相手のリンクとは交差できない。"
+          : "標準: リンクはどのリンクとも交差できない。着手時に自分のリンクを選んで外し、道を空けることができる。"}
+      </p>
+    </>
   );
 }
