@@ -22,8 +22,8 @@ export default defineConfig({
         description: "TWIXT 対戦アプリ",
         display: "standalone",
         orientation: "portrait",
-        theme_color: "#1e1e1e",
-        background_color: "#17181c",
+        theme_color: "#f5f2ea",
+        background_color: "#f5f2ea",
         lang: "ja",
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png" },

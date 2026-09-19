@@ -163,18 +163,49 @@ export default function App() {
 
   return (
     <div className="screen home">
+      <Logo />
       <h1>TWIXT</h1>
-      <p className="muted">白は上下、黒は左右を先につないだ方が勝ち</p>
-      {inProgress && (
-        <button className="primary big" onClick={resume}>
-          続きから({inProgress.mode === "cpu" && inProgress.cpu ? `CPU Lv${inProgress.cpu.level}` : "ローカル対戦"} · {inProgress.moves.split(/\s+/).filter(Boolean).length} 手目)
+      <p className="tagline">白は上下、黒は左右を先につないだ方が勝ち</p>
+      <div className="menu">
+        {inProgress && (
+          <button className="primary big" onClick={resume}>
+            <span className="ic">▶</span>
+            <span className="lbl">続きから<small>{inProgress.mode === "cpu" && inProgress.cpu ? `CPU Lv${inProgress.cpu.level}` : "ローカル対戦"} · {inProgress.moves.split(/\s+/).filter(Boolean).length} 手目</small></span>
+          </button>
+        )}
+        <button className={`${inProgress ? "" : "primary "}big`} onClick={() => setScreen({ name: "setup", mode: "cpu" })}>
+          <span className="ic">🤖</span><span className="lbl">CPU と対戦<small>Lv1 入門 〜 Lv6 最強</small></span>
         </button>
-      )}
-      <button className={`${inProgress ? "" : "primary "}big`} onClick={() => setScreen({ name: "setup", mode: "cpu" })}>CPU と対戦</button>
-      <button className="big" onClick={() => setScreen({ name: "setup", mode: "local" })}>ローカル対戦</button>
-      <button className="big" onClick={() => setScreen({ name: "online" })}>オンライン対戦(ルームID)</button>
-      <button className="big" onClick={() => setScreen({ name: "history" })}>対局履歴・棋譜再生</button>
+        <button className="big" onClick={() => setScreen({ name: "setup", mode: "local" })}>
+          <span className="ic">👥</span><span className="lbl">ローカル対戦<small>1 台で交互に打つ</small></span>
+        </button>
+        <button className="big" onClick={() => setScreen({ name: "online" })}>
+          <span className="ic">📡</span><span className="lbl">オンライン対戦<small>ルームコードで友達と</small></span>
+        </button>
+        <button className="big" onClick={() => setScreen({ name: "history" })}>
+          <span className="ic">📖</span><span className="lbl">対局履歴・棋譜再生<small>過去の対局を見返す</small></span>
+        </button>
+      </div>
       <footer className="muted small">v{__APP_VERSION__} · CPU: twixtbot model (MIT) by Jordan Lampe / twixtbot-ui by stevens68</footer>
     </div>
+  );
+}
+
+/** ホームのロゴ(小さな盤とリンク) */
+function Logo() {
+  const pegs: [number, number, "w" | "b"][] = [[1, 0, "w"], [2, 2, "w"], [3, 4, "w"], [0, 1, "b"], [2, 3, "b"], [4, 2, "b"]];
+  const p = (x: number, y: number) => [14 + x * 17, 14 + y * 17];
+  const links: [number, number][] = [[0, 1], [1, 2], [3, 4], [4, 5]];
+  return (
+    <svg className="logo" viewBox="0 0 96 96" aria-hidden="true">
+      <rect x="2" y="2" width="92" height="92" rx="18" fill="#efe6d2" stroke="#d9cdb2" strokeWidth="2" />
+      {Array.from({ length: 5 }, (_, x) => Array.from({ length: 5 }, (_, y) => {
+        const [cx, cy] = p(x, y); return <circle key={`${x}${y}`} cx={cx} cy={cy} r="2.2" fill="#b9aa87" />;
+      }))}
+      {links.map(([a, b], i) => { const [x1, y1] = p(pegs[a][0], pegs[a][1]); const [x2, y2] = p(pegs[b][0], pegs[b][1]);
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={pegs[a][2] === "w" ? "#fbfaf6" : "#22262b"} strokeWidth="5" strokeLinecap="round" />; })}
+      {pegs.map(([x, y, c], i) => { const [cx, cy] = p(x, y);
+        return <circle key={i} cx={cx} cy={cy} r="6.5" fill={c === "w" ? "#fbfaf6" : "#22262b"} stroke={c === "w" ? "#b9b2a2" : "#0d0f12"} strokeWidth="1.5" />; })}
+    </svg>
   );
 }

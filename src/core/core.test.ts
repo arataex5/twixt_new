@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { SIZE, canPlaceAt, idx, linkId } from "./board";
+import { SIZE, canPlaceAt, idx, linkId, xy } from "./board";
 import { allLinkIds, crossingCandidates } from "./links";
-import { applyMove, hasWon, newGame, replay, type Move } from "./game";
-import { movesToStr, strToMoves } from "./notation";
+import { applyMove, hasWon, newGame, replay, winningPath, type Move } from "./game";
+import { movesToStr, pointToStr, strToMoves } from "./notation";
 
 const P = (x: number, y: number): Move => ({ type: "place", x, y });
 
@@ -136,5 +136,20 @@ describe("notation", () => {
     const str = movesToStr(moves);
     expect(str).toBe("F12 swap A4 resign");
     expect(strToMoves(str)).toEqual(moves);
+  });
+});
+
+describe("winningPath", () => {
+  it("白が上下を結ぶとその経路を返す", () => {
+    const moves: string[] = [];
+    for (let k = 0; k <= 11; k++) { moves.push(pointToStr(5 + k, 2 * k)); moves.push(pointToStr(1, 1 + k)); }
+    moves.push(pointToStr(18, 23));
+    const st = replay({ pieRule: false }, strToMoves(moves.join(" ")));
+    expect(st.result).toEqual({ winner: "white", reason: "connect" });
+    const path = winningPath(st.board, "white")!;
+    expect(path.length).toBe(13);
+    expect(xy(path[0])[1]).toBe(0);
+    expect(xy(path[path.length - 1])[1]).toBe(23);
+    expect(winningPath(st.board, "black")).toBeNull();
   });
 });

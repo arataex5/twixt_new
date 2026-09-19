@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { SIZE, idx, isCorner, linkEnds, xy, type LinkId, type Player } from "../core/board";
-import type { GameState } from "../core/game";
+import { winningPath, type GameState } from "../core/game";
 import { pointToStr } from "../core/notation";
 
 export interface BoardSvgProps {
@@ -22,14 +22,18 @@ const PAD = 22;
 const W = SIZE * CELL + PAD * 2;
 
 const COLORS = {
-  board: "#d9c9a5",
-  hole: "#8a7a5a",
-  white: "#f4f1e8",
-  whiteEdge: "#c9c2b0",
-  black: "#1f1f1f",
-  blackEdge: "#000",
+  board: "#efe6d2",
+  boardEdge: "#d9cdb2",
+  hole: "#b9aa87",
+  label: "#8a7a58",
+  white: "#fbfaf6",
+  whiteEdge: "#b9b2a2",
+  black: "#22262b",
+  blackEdge: "#0d0f12",
   last: "#e0483e",
   selected: "#f5a623",
+  win: "#f2b632",
+  candidate: "#2f5fb3",
 };
 
 export function BoardSvg(props: BoardSvgProps) {
@@ -138,6 +142,11 @@ export function BoardSvg(props: BoardSvgProps) {
   const legal = (x: number, y: number) => canAct && state.board.cells[idx(x, y)] === null &&
     ((state.toMove === "white") ? x !== 0 && x !== SIZE - 1 : y !== 0 && y !== SIZE - 1) && !isCorner(x, y);
 
+  const winCells = useMemo(() => {
+    if (!state.result || state.result.reason !== "connect") return new Set<number>();
+    return new Set(winningPath(state.board, state.result.winner) ?? []);
+  }, [state.result, state.board]);
+
   const holes: React.ReactNode[] = [];
   for (let x = 0; x < SIZE; x++) {
     for (let y = 0; y < SIZE; y++) {
@@ -145,18 +154,26 @@ export function BoardSvg(props: BoardSvgProps) {
       const cx = PAD + x * CELL + CELL / 2, cy = PAD + y * CELL + CELL / 2;
       const owner = state.board.cells[idx(x, y)];
       const ov = overlay?.get(idx(x, y));
+      const isLast = state.lastPeg === idx(x, y);
+      const isWin = winCells.has(idx(x, y));
       holes.push(
         <g key={`${x}-${y}`}>
           {ov !== undefined && ov > 0.02 && (
-            <circle cx={cx} cy={cy} r={CELL * 0.45} fill="#3b82f6" opacity={Math.min(0.85, ov)} />
+            <circle cx={cx} cy={cy} r={CELL * 0.45} fill={COLORS.candidate} opacity={Math.min(0.75, ov)} />
           )}
           {owner === null ? (
-            <circle cx={cx} cy={cy} r={CELL * 0.14} fill={COLORS.hole} opacity={legal(x, y) ? 1 : 0.55} />
+            <circle cx={cx} cy={cy} r={CELL * 0.13} fill={COLORS.hole} opacity={legal(x, y) ? 1 : 0.5} />
           ) : (
-            <circle cx={cx} cy={cy} r={CELL * 0.36}
-              fill={owner === "white" ? COLORS.white : COLORS.black}
-              stroke={state.lastPeg === idx(x, y) ? COLORS.last : owner === "white" ? COLORS.whiteEdge : COLORS.blackEdge}
-              strokeWidth={state.lastPeg === idx(x, y) ? 3 : 1.5} />
+            <>
+              {isLast && !state.result && <circle className="last-ring" cx={cx} cy={cy} r={CELL * 0.5} fill="none" stroke={COLORS.last} strokeWidth={2.5} />}
+              {isWin && <circle className="win-glow" cx={cx} cy={cy} r={CELL * 0.55} fill={COLORS.win} opacity={0.7} />}
+              <circle key={`peg-${state.moves.length}`} className={isLast ? "peg-new" : undefined} cx={cx} cy={cy} r={CELL * 0.36}
+                fill={owner === "white" ? COLORS.white : COLORS.black}
+                stroke={owner === "white" ? COLORS.whiteEdge : COLORS.blackEdge}
+                strokeWidth={1.5} filter="url(#pegShadow)" />
+              {owner === "white" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.11} fill="#fff" opacity={0.9} pointerEvents="none" />}
+              {owner === "black" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.1} fill="#fff" opacity={0.18} pointerEvents="none" />}
+            </>
           )}
         </g>,
       );
@@ -164,26 +181,31 @@ export function BoardSvg(props: BoardSvgProps) {
   }
 
   const links: React.ReactNode[] = [];
+  const outlines: React.ReactNode[] = [];
   for (const [id, owner] of state.board.links) {
     const [a, b] = linkEnds(id);
     const [ax, ay] = xy(a), [bx, by] = xy(b);
     const sel = selectedLinks?.has(id);
+    const isNew = state.lastPeg !== null && (a === state.lastPeg || b === state.lastPeg);
+    const onWinPath = winCells.has(a) && winCells.has(b);
+    const x1 = PAD + ax * CELL + CELL / 2, y1 = PAD + ay * CELL + CELL / 2, x2 = PAD + bx * CELL + CELL / 2, y2 = PAD + by * CELL + CELL / 2;
+    if (onWinPath) links.push(<line key={`w${id}`} className="win-glow" x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.win} strokeWidth={11} strokeLinecap="round" opacity={0.7} />);
     links.push(
-      <line key={id}
-        x1={PAD + ax * CELL + CELL / 2} y1={PAD + ay * CELL + CELL / 2}
-        x2={PAD + bx * CELL + CELL / 2} y2={PAD + by * CELL + CELL / 2}
+      <line key={`${id}-${isNew ? state.moves.length : "s"}`} className={isNew && !sel ? "link-new" : undefined}
+        x1={x1} y1={y1} x2={x2} y2={y2}
         stroke={sel ? COLORS.selected : owner === "white" ? COLORS.white : COLORS.black}
         strokeWidth={sel ? 7 : 5} strokeLinecap="round" opacity={sel ? 0.9 : 1}
         strokeDasharray={sel ? "6 5" : undefined} />,
     );
+    if (owner === "white" && !sel) outlines.push(<line key={`e${id}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.whiteEdge} strokeWidth={6.5} strokeLinecap="round" opacity={0.55} />);
   }
 
   // 座標ラベル
   const labels: React.ReactNode[] = [];
   for (let k = 0; k < SIZE; k++) {
     const p = PAD + k * CELL + CELL / 2;
-    labels.push(<text key={`c${k}`} x={p} y={PAD - 8} fontSize={9} textAnchor="middle" fill="#5a4a2a" transform={rotated ? `rotate(180 ${p} ${PAD - 11})` : undefined}>{String.fromCharCode(65 + k)}</text>);
-    labels.push(<text key={`r${k}`} x={PAD - 8} y={p + 3} fontSize={9} textAnchor="end" fill="#5a4a2a" transform={rotated ? `rotate(180 ${PAD - 11} ${p})` : undefined}>{k + 1}</text>);
+    labels.push(<text key={`c${k}`} x={p} y={PAD - 8} fontSize={9} textAnchor="middle" fill={COLORS.label} fontWeight={600} transform={rotated ? `rotate(180 ${p} ${PAD - 11})` : undefined}>{String.fromCharCode(65 + k)}</text>);
+    labels.push(<text key={`r${k}`} x={PAD - 8} y={p + 3} fontSize={9} textAnchor="end" fill={COLORS.label} fontWeight={600} transform={rotated ? `rotate(180 ${PAD - 11} ${p})` : undefined}>{k + 1}</text>);
   }
 
   const edge = PAD + CELL; // 辺行の内側境界
@@ -192,20 +214,31 @@ export function BoardSvg(props: BoardSvgProps) {
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp} onWheel={onWheel}
       style={{ touchAction: "none", userSelect: "none" }}>
-      <rect x={0} y={0} width={W} height={W} fill={COLORS.board} rx={8} />
+      <defs>
+        <filter id="pegShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="1.2" stdDeviation="1" floodColor="#1f2329" floodOpacity="0.35" />
+        </filter>
+        <linearGradient id="boardGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f3ebd9" />
+          <stop offset="1" stopColor="#e6dbc2" />
+        </linearGradient>
+      </defs>
+      <rect x={0} y={0} width={W} height={W} fill="url(#boardGrad)" rx={10} />
+      <rect x={1} y={1} width={W - 2} height={W - 2} fill="none" stroke={COLORS.boardEdge} strokeWidth={2} rx={9} />
       <g transform={transform}>
         {/* 辺行の帯: 白は上下、黒は左右 */}
-        <rect x={edge} y={PAD} width={W - 2 * edge} height={CELL} fill={COLORS.white} opacity={0.35} />
-        <rect x={edge} y={W - PAD - CELL} width={W - 2 * edge} height={CELL} fill={COLORS.white} opacity={0.35} />
-        <rect x={PAD} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.25} />
-        <rect x={W - PAD - CELL} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.25} />
+        <rect x={edge} y={PAD} width={W - 2 * edge} height={CELL} fill="#fff" opacity={0.55} rx={4} />
+        <rect x={edge} y={W - PAD - CELL} width={W - 2 * edge} height={CELL} fill="#fff" opacity={0.55} rx={4} />
+        <rect x={PAD} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.16} rx={4} />
+        <rect x={W - PAD - CELL} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.16} rx={4} />
         {/* 境界線 */}
-        <line x1={edge} y1={edge} x2={W - edge} y2={edge} stroke={COLORS.white} strokeWidth={1.5} />
-        <line x1={edge} y1={W - edge} x2={W - edge} y2={W - edge} stroke={COLORS.white} strokeWidth={1.5} />
-        <line x1={edge} y1={edge} x2={edge} y2={W - edge} stroke={COLORS.black} strokeWidth={1.5} />
-        <line x1={W - edge} y1={edge} x2={W - edge} y2={W - edge} stroke={COLORS.black} strokeWidth={1.5} />
+        <line x1={edge} y1={edge} x2={W - edge} y2={edge} stroke="#fff" strokeWidth={2} opacity={0.9} />
+        <line x1={edge} y1={W - edge} x2={W - edge} y2={W - edge} stroke="#fff" strokeWidth={2} opacity={0.9} />
+        <line x1={edge} y1={edge} x2={edge} y2={W - edge} stroke={COLORS.black} strokeWidth={2} opacity={0.6} />
+        <line x1={W - edge} y1={edge} x2={W - edge} y2={W - edge} stroke={COLORS.black} strokeWidth={2} opacity={0.6} />
         {labels}
         {holes}
+        {outlines}
         {links}
       </g>
     </svg>

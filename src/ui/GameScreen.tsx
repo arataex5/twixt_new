@@ -203,9 +203,8 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     }
     if (online?.status === "waiting") return "相手の参加を待っています…";
     const who = online ? (state.toMove === online.myColor ? "あなた" : "相手") : cpu && state.toMove === cpu.color ? "CPU" : cpu ? "あなた" : "";
-    const prog = thinking && progress ? (progress.total > 0 ? ` ${progress.done}/${progress.total}` : ` ${progress.done}回`) : "";
-    return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${thinking ? ` 思考中…${prog}` : ""}${sending ? " 送信中…" : ""}`;
-  }, [state, cpu, online, thinking, progress, sending]);
+    return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${sending ? " 送信中…" : ""}`;
+  }, [state, cpu, online, thinking, sending]);
 
   // スワップ(パイルール)の説明: 初手のペグは主対角線で鏡映されて黒の駒になる
   const swapNotice = useMemo(() => {
@@ -232,19 +231,33 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     <div className="screen game">
       <header className="bar">
         <button onClick={onExit}>← 戻る</button>
-        <div className={`status ${state.result ? "over" : state.toMove}`}>{status}</div>
-        <span className="muted">{state.moves.length} 手</span>
+        <div className={`status ${state.result ? "over" : state.toMove}${thinking || sending ? " thinking" : ""}`}>{status}</div>
+        <span className="plies">{state.moves.length} 手</span>
       </header>
 
-      <BoardSvg
-        state={state}
-        interactive={interactive}
-        onPlace={onPlace}
-        selectedLinks={selected}
-        onToggleLink={onToggleLink}
-        rotated={rotated}
-        overlay={overlay}
-      />
+      <div className="board-wrap">
+        <BoardSvg
+          state={state}
+          interactive={interactive}
+          onPlace={onPlace}
+          selectedLinks={selected}
+          onToggleLink={onToggleLink}
+          rotated={rotated}
+          overlay={overlay}
+        />
+      </div>
+
+      {thinking && cpu && (
+        <div className="think">
+          <span>CPU Lv{cpu.level} が考えています</span>
+          <div className="track">
+            {progress && progress.total > 0
+              ? <div className="fill" style={{ width: `${Math.min(100, (100 * progress.done) / progress.total)}%` }} />
+              : <div className="fill indeterminate" />}
+          </div>
+          <span>{progress ? (progress.total > 0 ? `${progress.done}/${progress.total}` : `${progress.done} 回`) : ""}</span>
+        </div>
+      )}
 
       {selected.size > 0 && (
         <div className="hint">選択した自リンク {selected.size} 本を外して着手します(もう一度タップで解除)</div>

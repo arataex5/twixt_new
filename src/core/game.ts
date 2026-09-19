@@ -125,6 +125,29 @@ export function hasWon(board: Board, owner: Player): boolean {
   return false;
 }
 
+/** owner の勝利ライン(2 辺を結ぶペグの列)。結んでいなければ null。表示用 */
+export function winningPath(board: Board, owner: Player): number[] | null {
+  const parent = new Int32Array(CELLS).fill(-2); // -2: 未訪問, -1: 始点
+  const queue: number[] = [];
+  for (let k = 0; k < SIZE; k++) {
+    const start = owner === "white" ? idx(k, 0) : idx(0, k);
+    if (board.cells[start] === owner) { parent[start] = -1; queue.push(start); }
+  }
+  for (let qi = 0; qi < queue.length; qi++) {
+    const c = queue[qi];
+    const [x, y] = xy(c);
+    if (owner === "white" ? y === SIZE - 1 : x === SIZE - 1) {
+      const path: number[] = [];
+      for (let cur = c; cur !== -1; cur = parent[cur]) path.push(cur);
+      return path.reverse();
+    }
+    for (const n of neighbors(board, c, owner)) {
+      if (parent[n] === -2) { parent[n] = c; queue.push(n); }
+    }
+  }
+  return null;
+}
+
 /**
  * owner がこの先どう打っても 2 辺を結べないか(楽観的判定: 空き穴を自分のペグとみなし、
  * 相手リンクとの交差だけを障害とする)。true なら本当に不可能。

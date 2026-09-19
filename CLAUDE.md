@@ -36,6 +36,10 @@
   スマホでは Lv6 は 1 手 15 秒前後になる見込み。これで必須機能はすべて完了。さらに強くするなら minSims を 100 に上げるか Lv5 を 30 sims に下げる。
 - Pages 公開先: https://arataex5.github.io/twixt_new/
 
+- 2026-09-19 ビジュアルアップデート: ライトテーマに全面変更(`src/index.css`)。盤は暖色クリーム+影付きペグ、最終手リング、
+  勝利ライン(`winningPath`)の金色グロー、着手/リンクのアニメーション、CPU 思考中のプログレスバー、ホームにロゴとメニューカード。
+  `prefers-reduced-motion` でアニメは止まる。manifest/theme-color も #f5f2ea に変更。
+
 ## 運用ルール
 
 - `main` に push → Pages デプロイと debug APK ビルドが自動で走る(`.github/workflows/`)。
