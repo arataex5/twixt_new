@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Player } from "../core/board";
 import type { GameSettings, Move } from "../core/game";
-import { createRoom, ensureSignedIn, joinRoom, leaveRoom, normalizeCode, sendMove, setReady, subscribeRoom, updateRoomSettings, type RoomView } from "../net/room";
+import { createRoom, ensureSignedIn, joinRoom, leaveRoom, normalizeCode, sendMove, setReady, startGame, subscribeRoom, updateRoomSettings, type RoomView } from "../net/room";
 import { GameScreen } from "./GameScreen";
 import { HelpButton, PIE_RULE_HELP, RULES_HELP } from "./Help";
 
@@ -81,7 +81,8 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
     const myColor: Player = view.myColor ?? phase.myColor;
     const status = view.data.status;
     const url = `${location.origin}${location.pathname}?room=${phase.code}`;
-    const canEdit = view.hostUid === phase.uid && (status === "waiting" || status === "ready");
+    const isHost = view.hostUid === phase.uid;
+    const canEdit = isHost && (status === "waiting" || status === "ready");
 
     if (status === "waiting" || status === "ready") {
       const oppColor: Player = myColor === "white" ? "black" : "white";
@@ -105,13 +106,24 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
           ) : (
             <section className="card ready">
               <h3>プレイヤー</h3>
-              <div className="ready-row"><span className="pill white">白(先手)</span><span>{playerLabel(view, "white", phase.uid)}</span><span className={`ready-mark ${view.data.ready?.white ? "on" : ""}`}>{view.data.ready?.white ? "準備完了" : "未完了"}</span></div>
-              <div className="ready-row"><span className="pill black">赤(後手)</span><span>{playerLabel(view, "black", phase.uid)}</span><span className={`ready-mark ${view.data.ready?.black ? "on" : ""}`}>{view.data.ready?.black ? "準備完了" : "未完了"}</span></div>
+              <div className="ready-row"><span className="pill white">白(先手)</span><span>{playerLabel(view, "white", phase.uid)}</span><span className={`ready-mark ${view.data.ready?.white ? "on" : ""}`}>{readyLabel(view, "white")}</span></div>
+              <div className="ready-row"><span className="pill black">赤(後手)</span><span>{playerLabel(view, "black", phase.uid)}</span><span className={`ready-mark ${view.data.ready?.black ? "on" : ""}`}>{readyLabel(view, "black")}</span></div>
               {!view.opponentOnline && oppPresent && <div className="hint">相手との接続が切れています(復帰待ち)</div>}
-              <button className={`big ${myReady ? "" : "primary"}`} disabled={busy} onClick={() => run(() => setReady(phase.code, phase.uid, !myReady))}>
-                {myReady ? "準備完了を取り消す" : "準備完了"}
-              </button>
-              <p className="muted small">{myReady && !oppReady ? "相手の準備完了を待っています…" : "両者が準備完了すると対局が始まります。"}</p>
+              {isHost ? (
+                <>
+                  <button className="primary big" disabled={busy || !oppReady || !view.opponentOnline} onClick={() => run(() => startGame(phase.code, phase.uid))}>
+                    ゲーム開始
+                  </button>
+                  <p className="muted small">{oppReady ? "相手の準備ができました。「ゲーム開始」で対局を始めます。" : "相手が「準備完了」を押すと開始できます。"}</p>
+                </>
+              ) : (
+                <>
+                  <button className={`big ${myReady ? "" : "primary"}`} disabled={busy || !view.opponentOnline} onClick={() => run(() => setReady(phase.code, phase.uid, !myReady))}>
+                    {myReady ? "準備完了を取り消す" : "準備完了"}
+                  </button>
+                  <p className="muted small">{myReady ? "ホストが「ゲーム開始」を押すのを待っています…" : "設定を確認して「準備完了」を押してください。"}</p>
+                </>
+              )}
             </section>
           )}
 
@@ -172,6 +184,13 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
       <p className="muted small">ルームは相手が入るまで開いたままです。対局中に通信が切れても、同じコードで再接続すれば続きから打てます(相手もアプリを開いている必要があります)。</p>
     </div>
   );
+}
+
+function readyLabel(view: RoomView, color: Player): string {
+  const uid = view.data.players?.[color];
+  if (!uid) return "";
+  if (uid === view.hostUid) return "ホスト";
+  return view.data.ready?.[color] ? "準備完了" : "未完了";
 }
 
 function playerLabel(view: RoomView, color: Player, uid: string): string {

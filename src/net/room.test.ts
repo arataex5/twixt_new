@@ -1,7 +1,7 @@
 // ルームのトランザクション本体のテスト。
 // 空き枠は null の場合と未設定(undefined)の場合の両方があり得る点を再現する。
 import { describe, expect, it } from "vitest";
-import { joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, type RoomData } from "./room";
+import { joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, startTransition, type RoomData } from "./room";
 
 const settings = { pieRule: true, rules: "standard" as const };
 
@@ -111,22 +111,29 @@ describe("mergeRemote(再接続時の棋譜の突き合わせ)", () => {
   });
 });
 
-describe("readyTransition", () => {
-  const ready = () => room({ players: { white: "w", black: "b" }, status: "ready", ready: {} });
-  it("片方だけでは始まらない", () => {
-    const r = readyTransition(ready(), "w", true) as RoomData;
+describe("readyTransition / startTransition", () => {
+  const ready = () => room({ host: "w", players: { white: "w", black: "b" }, status: "ready", ready: {} });
+  it("ゲストの準備完了だけでは始まらない", () => {
+    const r = readyTransition(ready(), "b", true) as RoomData;
     expect(r.status).toBe("ready");
-    expect(r.ready).toEqual({ white: true });
+    expect(r.ready).toEqual({ black: true });
   });
-  it("両者そろうと playing になる", () => {
-    const r1 = readyTransition(ready(), "w", true) as RoomData;
-    const r2 = readyTransition(r1, "b", true) as RoomData;
+  it("相手が未完了だとホストは開始できない", () => {
+    expect(startTransition(ready(), "w")).toMatch(/準備完了/);
+  });
+  it("相手が準備完了ならホストが開始できる", () => {
+    const r1 = readyTransition(ready(), "b", true) as RoomData;
+    const r2 = startTransition(r1, "w") as RoomData;
     expect(r2.status).toBe("playing");
   });
+  it("ゲストは開始できない", () => {
+    const r1 = readyTransition(ready(), "b", true) as RoomData;
+    expect(startTransition(r1, "b")).toMatch(/ホスト/);
+  });
   it("取り消しできる", () => {
-    const r1 = readyTransition(ready(), "w", true) as RoomData;
-    const r2 = readyTransition(r1, "w", false) as RoomData;
-    expect(r2.ready).toEqual({ white: false });
+    const r1 = readyTransition(ready(), "b", true) as RoomData;
+    const r2 = readyTransition(r1, "b", false) as RoomData;
+    expect(r2.ready).toEqual({ black: false });
   });
   it("相手未入室なら拒否", () => {
     expect(readyTransition(room(), "host", true)).toMatch(/入室/);

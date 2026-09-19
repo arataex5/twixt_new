@@ -1,16 +1,25 @@
 // ヘルプ部品: 「?」ボタン(押すと説明が開く)と、TWIXT の基本形リファレンス
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-/** 丸い「?」ボタン。押すと直下に説明ボックスを開閉する */
+/** 丸い「?」ボタン。押すと画面中央に説明を開く。外側をタップすると閉じる */
 export function HelpButton({ title, children }: { title: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   return (
     <span className="help">
-      <button type="button" className="help-btn" aria-label={`${title}の説明`} aria-expanded={open} onClick={(e) => { e.preventDefault(); setOpen((o) => !o); }}>?</button>
+      <button type="button" className="help-btn" aria-label={`${title}の説明`} aria-expanded={open}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}>?</button>
       {open && (
-        <div className="help-box" onClick={(e) => e.preventDefault()}>
-          <strong>{title}</strong>
-          <div>{children}</div>
+        <div className="help-backdrop" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); }}>
+          <div className="help-box" role="dialog" aria-label={title} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+            <div className="help-head"><strong>{title}</strong><button type="button" className="small" onClick={() => setOpen(false)}>閉じる</button></div>
+            <div>{children}</div>
+          </div>
         </div>
       )}
     </span>
@@ -52,7 +61,7 @@ interface Pattern {
 
 /** 2 つの駒が「どちらか一方の中継点」で必ずつながる形(相手は両方は塞げない) */
 const PATTERNS: Pattern[] = [
-  { name: "ナイト跳び(リンク)", offset: [1, 2], summary: "縦 2・横 1(または縦 1・横 2)離れた駒は自動で橋がかかる", detail: "TWIXT の基本。チェスのナイトと同じ動きの位置に置くと、間に他の橋がなければ自動でリンクされます。" },
+  { name: "1 つ飛ばし", offset: [0, 2], summary: "縦(横)に穴 1 つ分あけて並んだ 2 駒", detail: "間の穴をはさんで左右(上下)に中継点が 1 つずつ。短い距離を確実につなぎたいときの形です。" },
   { name: "斜め隣", offset: [1, 1], summary: "斜めに隣り合う 2 駒は、2 通りの中継点でつながる", detail: "中継点が 2 か所あるので、相手が片方を塞いでももう片方でつながります。最も手堅い形です。" },
   { name: "縦 4(横 4)", offset: [0, 4], summary: "同じ列(行)で 4 つ離れた 2 駒", detail: "中継点は左右に 1 つずつ。まっすぐ遠くまで伸ばしたいときの形で、相手の妨害に強いです。" },
   { name: "1・3 の形", offset: [1, 3], summary: "横 1・縦 3 離れた 2 駒", detail: "L 字のような形。中継点は 2 か所あり、進む方向を少しずらしながら伸ばせます。" },

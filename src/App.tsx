@@ -174,12 +174,12 @@ export default function App() {
       <p className="tagline">白は上下、赤は左右を先につないだ方が勝ち</p>
       <div className="menu">
         {inProgress && (
-          <button className="primary big" onClick={resume}>
+          <button className="big" onClick={resume}>
             <span className="ic">▶</span>
             <span className="lbl">続きから<small>{inProgress.mode === "cpu" && inProgress.cpu ? `CPU Lv${inProgress.cpu.level}` : "ローカル対戦"} · {inProgress.moves.split(/\s+/).filter(Boolean).length} 手目</small></span>
           </button>
         )}
-        <button className={`${inProgress ? "" : "primary "}big`} onClick={() => setScreen({ name: "setup", mode: "cpu" })}>
+        <button className="big" onClick={() => setScreen({ name: "setup", mode: "cpu" })}>
           <span className="ic">🤖</span><span className="lbl">CPU と対戦<small>Lv1 入門 〜 Lv6 最強</small></span>
         </button>
         <button className="big" onClick={() => setScreen({ name: "setup", mode: "local" })}>

@@ -167,7 +167,21 @@ export function readyTransition(cur: RoomData, uid: string, ready: boolean): Roo
   const color: Player | null = players.white === uid ? "white" : players.black === uid ? "black" : null;
   if (!color) return "参加者ではありません";
   cur.ready = { ...(cur.ready ?? {}), [color]: ready };
-  if (cur.ready.white && cur.ready.black) { cur.status = "playing"; cur.ready = undefined; }
+  return cur;
+}
+
+/** ホストが対局を開始する。ゲストが準備完了していることが条件 */
+export function startTransition(cur: RoomData, uid: string): RoomData | string {
+  if (cur.status === "playing") return "対局はもう始まっています";
+  if (cur.status !== "ready") return "相手がまだ入室していません";
+  if (cur.host && cur.host !== uid) return "ホストのみ開始できます";
+  const players = cur.players ?? {};
+  const hostColor: Player | null = players.white === uid ? "white" : players.black === uid ? "black" : null;
+  if (!hostColor) return "参加者ではありません";
+  const guestColor: Player = hostColor === "white" ? "black" : "white";
+  if (!cur.ready?.[guestColor]) return "相手がまだ準備完了していません";
+  cur.status = "playing";
+  cur.ready = undefined;
   return cur;
 }
 
@@ -642,6 +656,24 @@ export async function setReady(code: string, uid: string, ready: boolean): Promi
   }
   if (!s.conn?.open) throw new Error("相手と接続されていません(再接続中)");
   safeSend(s.conn, { t: "ready", uid, ready });
+}
+
+/** ホストが対局を開始する */
+export async function startGame(code: string, uid: string): Promise<void> {
+  if (MOCK) {
+    let reason = "";
+    const r = mockTransaction(code, (cur) => { if (!cur) { reason = "ルームがありません"; return; } const t = startTransition(cur, uid); if (typeof t === "string") { reason = t; return; } return t; });
+    if (!r.committed) throw new Error(reason);
+    return;
+  }
+  const s = sessions.get(code);
+  if (!s || !s.alive || s.role !== "host") throw new Error("ホストのみ開始できます");
+  const r = startTransition(clone(s.data), uid);
+  if (typeof r === "string") throw new Error(r);
+  s.data = r;
+  persist(s);
+  safeSend(s.conn, { t: "state", data: clone(s.data) });
+  notify(s);
 }
 
 /** ルームを離れる。待機中・終了済みなら保存も消す(対局中は「直前のルームに戻る」用に残す) */
