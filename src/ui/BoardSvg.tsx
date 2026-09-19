@@ -171,10 +171,11 @@ export function BoardSvg(props: BoardSvgProps) {
             <>
               {isLast && !state.result && <circle className="last-ring" cx={cx} cy={cy} r={CELL * 0.5} fill="none" stroke={COLORS.last} strokeWidth={2.5} />}
               {isWin && <circle className="win-glow" cx={cx} cy={cy} r={CELL * 0.55} fill={COLORS.win} opacity={0.7} />}
+              <circle cx={cx} cy={cy + 1.4} r={CELL * 0.37} fill="#1f2329" opacity={0.28} />
               <circle key={`peg-${state.moves.length}`} className={isLast ? "peg-new" : undefined} cx={cx} cy={cy} r={CELL * 0.36}
                 fill={owner === "white" ? COLORS.white : COLORS.black}
                 stroke={owner === "white" ? COLORS.whiteEdge : COLORS.blackEdge}
-                strokeWidth={owner === "white" ? 2 : 1.5} filter="url(#pegShadow)" />
+                strokeWidth={owner === "white" ? 2 : 1.5} />
               {owner === "white" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.11} fill="#fff" opacity={0.9} pointerEvents="none" />}
               {owner === "black" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.1} fill="#fff" opacity={0.35} pointerEvents="none" />}
             </>
@@ -219,9 +220,6 @@ export function BoardSvg(props: BoardSvgProps) {
       onPointerCancel={onPointerUp} onWheel={onWheel}
       style={{ touchAction: "none", userSelect: "none" }}>
       <defs>
-        <filter id="pegShadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="1.4" stdDeviation="1.1" floodColor="#1f2329" floodOpacity="0.45" />
-        </filter>
         <linearGradient id="boardGrad" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#e4cfa9" />
           <stop offset="1" stopColor="#d1b784" />

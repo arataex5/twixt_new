@@ -96,9 +96,9 @@ input[type="range"] { accent-color: var(--accent); }
 @keyframes peg-in { from { transform: scale(0.2); opacity: 0.2; } to { transform: scale(1); opacity: 1; } }
 .link-new { stroke-dasharray: 60; stroke-dashoffset: 60; animation: link-draw 0.3s ease-out 0.08s forwards; }
 @keyframes link-draw { to { stroke-dashoffset: 0; } }
-.last-ring { animation: ring 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.last-ring { animation: ring 1.6s ease-in-out 3; transform-box: fill-box; transform-origin: center; }
 @keyframes ring { 0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 0.35; transform: scale(1.18); } }
-.win-glow { animation: glow 1.4s ease-in-out infinite; }
+.win-glow { animation: glow 1.4s ease-in-out 4; }
 @keyframes glow { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .peg-new, .link-new, .last-ring, .win-glow, .status.thinking::after, .think .fill.indeterminate { animation: none; }
@@ -151,7 +151,7 @@ textarea { width: 100%; }
 .confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--accent-2); border: 1px solid #c5d6f2; border-radius: 12px; padding: 10px 12px; }
 .confirm > span { flex: 1; min-width: 8em; }
 .confirm .coord { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1.15rem; color: var(--accent); }
-.pending-ring { animation: ring 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.pending-ring { animation: ring 1.2s ease-in-out 4; transform-box: fill-box; transform-origin: center; }
 
 /* ---- ヘルプ ---- */
 .help { display: inline-block; vertical-align: middle; }

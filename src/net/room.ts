@@ -246,7 +246,7 @@ type Msg =
   | { t: "welcome"; data: RoomData; yourColor: Player }
   | { t: "reject"; reason: string }
   | { t: "move"; id: number; uid: string; move: Move; expectedIndex: number }
-  | { t: "ack"; id: number; ok: boolean; reason?: string }
+  | { t: "ack"; id: number; ok: boolean; reason?: string; data?: RoomData }
   | { t: "state"; data: RoomData }
   | { t: "ready"; uid: string; ready: boolean }
   | { t: "draw"; uid: string; action: "offer" | "accept" | "decline" }
@@ -378,8 +378,8 @@ function attachHostConn(s: Session, conn: DataConnection) {
       if (typeof r === "string") { safeSend(conn, { t: "ack", id: m.id, ok: false, reason: r }); return; }
       s.data = r;
       persist(s);
-      safeSend(conn, { t: "ack", id: m.id, ok: true });
-      safeSend(conn, { t: "state", data: clone(s.data) });
+      // ack に最新状態を同梱して往復を 1 回にする
+      safeSend(conn, { t: "ack", id: m.id, ok: true, data: clone(s.data) });
       notify(s);
     } else if (m.t === "draw") {
       const r = drawTransition(clone(s.data), m.uid, m.action);
@@ -436,7 +436,7 @@ function connectToHost(s: Session) {
   if (s.conn?.open) return;
   let conn: DataConnection;
   try {
-    conn = s.peer.connect(peerId(s.code), { reliable: true });
+    conn = s.peer.connect(peerId(s.code), { reliable: true, serialization: "json" });
   } catch {
     scheduleRetry(s, () => connectToHost(s));
     return;
@@ -475,6 +475,7 @@ function connectToHost(s: Session) {
       persist(s);
       notify(s);
     } else if (m.t === "ack") {
+      if (m.ok && m.data) { s.data = m.data; persist(s); notify(s); }
       const p = s.pending.get(m.id);
       if (p) { s.pending.delete(m.id); clearTimeout(p.timer); if (m.ok) p.resolve(); else p.reject(new Error(m.reason ?? "拒否されました")); }
     } else if (m.t === "bye") {
