@@ -220,6 +220,13 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${sending ? " 送信中…" : ""}`;
   }, [state, cpu, online, thinking, sending]);
 
+  const swapFrom = useMemo(() => {
+    const last = state.moves[state.moves.length - 1];
+    const first = state.moves[0];
+    if (!last || last.type !== "swap" || !first || first.type !== "place") return null;
+    return { x: first.x, y: first.y };
+  }, [state.moves]);
+
   // スワップ(パイルール)の説明: 初手のペグは主対角線で鏡映されて赤の駒になる
   const swapNotice = useMemo(() => {
     const last = state.moves[state.moves.length - 1];
@@ -227,7 +234,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     if (!last || last.type !== "swap" || !first || first.type !== "place") return null;
     const from = pointToStr(first.x, first.y), to = pointToStr(first.y, first.x);
     const who = online ? (online.myColor === "black" ? "あなた" : "相手") : cpu ? (cpu.color === "black" ? "CPU" : "あなた") : "後手";
-    return `${who}がスワップしました: 初手 ${from}(白) は ${to}(赤) に鏡映され、後手の駒になりました。白の番です。`;
+    return `${who}がスワップしました: 白の初手 ${from} は、列と行を入れ替えた ${to} に移って赤の駒になりました(色は交換せず、盤の対角線で折り返す方式)。白の番です。`;
   }, [state.moves, cpu]);
 
   const overlay = useMemo(() => {
@@ -259,6 +266,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
           rotated={rotated}
           overlay={overlay}
           pending={interactive ? pending : null}
+          swapFrom={swapFrom}
         />
       </div>
 

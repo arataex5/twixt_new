@@ -17,6 +17,8 @@ export interface BoardSvgProps {
   overlay?: Map<number, number>;
   /** 選択中(未確定)の着手位置 */
   pending?: { x: number; y: number } | null;
+  /** 直前がスワップのとき、鏡映前の初手位置(説明用のゴースト表示) */
+  swapFrom?: { x: number; y: number } | null;
 }
 
 const CELL = 24; // 1 穴のピクセル幅(viewBox 単位)
@@ -39,7 +41,7 @@ const COLORS = {
 };
 
 export function BoardSvg(props: BoardSvgProps) {
-  const { state, interactive, onPlace, selectedLinks, onToggleLink, rotated, overlay, pending } = props;
+  const { state, interactive, onPlace, selectedLinks, onToggleLink, rotated, overlay, pending, swapFrom } = props;
   const svgRef = useRef<SVGSVGElement>(null);
   const [view, setView] = useState({ x: 0, y: 0, s: 1 }); // viewBox: origin & scale (1 = 全体)
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -247,6 +249,18 @@ export function BoardSvg(props: BoardSvgProps) {
         {holes}
         {outlines}
         {links}
+        {swapFrom && state.lastPeg !== null && (() => {
+          const fx = PAD + swapFrom.x * CELL + CELL / 2, fy = PAD + swapFrom.y * CELL + CELL / 2;
+          const [tx, ty] = xy(state.lastPeg);
+          const cx = PAD + tx * CELL + CELL / 2, cy = PAD + ty * CELL + CELL / 2;
+          return (
+            <g pointerEvents="none">
+              <line x1={fx} y1={fy} x2={cx} y2={cy} stroke={COLORS.candidate} strokeWidth={2} strokeDasharray="5 5" opacity={0.8} />
+              <circle cx={fx} cy={fy} r={CELL * 0.36} fill="none" stroke={COLORS.whiteEdge} strokeWidth={2} strokeDasharray="4 3" />
+              <text x={fx} y={fy - CELL * 0.6} fontSize={9} fontWeight={700} textAnchor="middle" fill={COLORS.label}>{pointToStr(swapFrom.x, swapFrom.y)}(白の初手)</text>
+            </g>
+          );
+        })()}
         {pending && state.board.cells[idx(pending.x, pending.y)] === null && (() => {
           const cx = PAD + pending.x * CELL + CELL / 2, cy = PAD + pending.y * CELL + CELL / 2;
           const label = pointToStr(pending.x, pending.y);

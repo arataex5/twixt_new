@@ -35,7 +35,7 @@ export function ReplayScreen({ title, settings, moves, onExit, onPlayFrom }: Rep
         <span className="muted">{ply}/{moves.length}</span>
       </header>
 
-      <div className="board-wrap"><BoardSvg state={state} interactive={null} onPlace={() => {}} /></div>
+      <div className="board-wrap"><BoardSvg state={state} interactive={null} onPlace={() => {}} swapFrom={last?.type === "swap" && moves[0]?.type === "place" ? { x: moves[0].x, y: moves[0].y } : null} /></div>
 
       <div className="controls replay">
         <button onClick={() => setPly(0)} disabled={ply === 0}>|◀</button>
