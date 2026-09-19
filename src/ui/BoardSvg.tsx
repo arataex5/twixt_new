@@ -126,7 +126,7 @@ export function BoardSvg(props: BoardSvgProps) {
         const p1 = { x: PAD + ax * CELL + CELL / 2, y: PAD + ay * CELL + CELL / 2 };
         const p2 = { x: PAD + bx * CELL + CELL / 2, y: PAD + by * CELL + CELL / 2 };
         const d = distToSegment(ux, uy, p1.x, p1.y, p2.x, p2.y);
-        if (d < CELL * 0.28 && (!best || d < best.d)) best = { id, d };
+        if (d < CELL * 0.4 && (!best || d < best.d)) best = { id, d };
       }
       if (best) {
         // ペグの真上ならペグ優先

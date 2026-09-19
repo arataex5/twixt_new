@@ -197,3 +197,4 @@ textarea { width: 100%; }
 @keyframes confetti-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0.6; } }
 .result .controls { flex-wrap: nowrap; }
 @media (prefers-reduced-motion: reduce) { .gameover, .gameover-backdrop, .gameover-emoji { animation: none; } .confetti { display: none; } }
+.confirm.links { background: var(--warn-bg); border-color: #efd9a8; }

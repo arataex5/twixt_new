@@ -64,6 +64,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
   const [sending, setSending] = useState(false);
   const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
   const [showEnd, setShowEnd] = useState(false);
+  const [endDismissed, setEndDismissed] = useState(false);
 
   // オンライン: サーバーの棋譜が更新されたら盤面を同期
   const onlineMoves = online?.moves;
@@ -217,7 +218,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
 
   // 終局: 勝利ラインを少し見せてから結果画面を出す
   useEffect(() => {
-    if (!state.result) { setShowEnd(false); return; }
+    if (!state.result) { setShowEnd(false); setEndDismissed(false); return; }
     const t = setTimeout(() => setShowEnd(true), 900);
     return () => clearTimeout(t);
   }, [state.result]);
@@ -301,9 +302,9 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
 
       {pending && interactive && (
         <div className="confirm">
-          <span>選択中: <strong className="coord">{pointToStr(pending.x, pending.y)}</strong>{selected.size > 0 ? `(リンク ${selected.size} 本を外す)` : ""}</span>
-          <button className="primary" onClick={confirmPlace}>ここに置く</button>
-          <button onClick={() => setPending(null)}>取消</button>
+          <span>選択中: <strong className="coord">{pointToStr(pending.x, pending.y)}</strong>{selected.size > 0 ? <> · リンク <strong>{selected.size} 本</strong>を外す</> : ""}</span>
+          <button className="primary" onClick={confirmPlace}>{selected.size > 0 ? "リンクを外して置く" : "ここに置く"}</button>
+          <button onClick={() => { setPending(null); setSelected(new Set()); }}>取消</button>
         </div>
       )}
 
@@ -319,8 +320,11 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         </div>
       )}
 
-      {selected.size > 0 && (
-        <div className="hint">選択した自リンク {selected.size} 本を外して着手します(もう一度タップで解除)</div>
+      {selected.size > 0 && !pending && (
+        <div className="confirm links">
+          <span>外すリンク <strong>{selected.size} 本</strong> を選択中。次に置く穴をタップすると、着手と同時に外れます。</span>
+          <button onClick={() => setSelected(new Set())}>選択をやめる</button>
+        </div>
       )}
       {error && <div className="hint error">{error}</div>}
       {swapNotice && <div className="hint swap">{swapNotice}</div>}
@@ -375,7 +379,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         <button onClick={() => navigator.clipboard?.writeText(movesToStr(state.moves))}>コピー</button>
       </details>
 
-      {state.result && outcome && !showEnd && (
+      {state.result && outcome && !showEnd && endDismissed && (
         <div className="result">
           <strong>{outcome.emoji} {outcome.title}</strong>
           <div className="controls">
@@ -386,7 +390,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         </div>
       )}
       {showEnd && outcome && (
-        <div className="gameover-backdrop" onClick={() => setShowEnd(false)}>
+        <div className="gameover-backdrop" onClick={() => { setShowEnd(false); setEndDismissed(true); }}>
           {outcome.kind === "win" && <Confetti />}
           <div className={`gameover ${outcome.kind}`} onClick={(e) => e.stopPropagation()}>
             <div className="gameover-emoji">{outcome.emoji}</div>
@@ -398,7 +402,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
               <button className="primary big" onClick={() => { setShowEnd(false); restart(); }}>もう一度遊ぶ</button>
             )}
             <button className="big" onClick={onExit}>タイトルへ戻る</button>
-            <button className="small ghost" onClick={() => setShowEnd(false)}>盤面を見る</button>
+            <button className="small ghost" onClick={() => { setShowEnd(false); setEndDismissed(true); }}>盤面を見る</button>
           </div>
         </div>
       )}
