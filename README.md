@@ -20,19 +20,20 @@ npm run build      # GitHub Pages 用ビルド (dist/)
 
 初回のみ、リポジトリの Settings → Pages → Source を **GitHub Actions** にしてください。
 
-## オンライン対戦(Firebase)
+## オンライン対戦(PeerJS / P2P)
 
-- Firebase プロジェクト `twixt-online`(Realtime Database + 匿名認証)を使用。接続設定は `src/net/firebase.ts`。
-- セキュリティルールは `database.rules.json`。Firebase コンソール → Realtime Database → 「ルール」タブに内容を貼り付けて「公開」する。
-- 開発時は `?mock=1` を URL に付けると Firebase を使わず、同一ブラウザの複数タブ間で localStorage 同期して動作確認できる(Firebase と同じく null の値はキーごと落とす)。
-- 注意: Firebase RTDB は `null` の値をキーごと削除するため、受信データでは空き枠が `undefined` になる。判定は `== null` で行うこと(`src/net/room.test.ts` 参照)。
-- 2026-09-10 本番 Firebase で 2 クライアント検証済み: 作成 → 参加 → 着手同期(双方向) → スワップ → 投了 → 在席表示。
+- サーバーは持たない。PeerJS 公式の無料シグナリングサーバー(0.peerjs.com)で相手を見つけ、あとは端末同士が WebRTC で直接通信する。
+- ホストの Peer ID はルームコード(`twixt-<CODE>`)。ホストが審判役で、ゲストの手はホストが検証して両者に配る(`src/net/room.ts`)。
+- 両者が対局状態を localStorage に保存する。通信が切れても自動で再接続し、アプリを閉じても「直前のルームに戻る」で同じコードから続きを打てる。
+  ただし手を預かるサーバーが無いので、再開には両方が同時にアプリを開いている必要がある。
+- TURN サーバーは無いため、キャリア回線同士など一部の NAT 環境ではつながらないことがある。
+- 開発時は `?mock=1` を URL に付けると PeerJS を使わず、同一ブラウザの複数タブ間で localStorage 同期して動作確認できる。
 
 ## 構成
 
 - `src/core/` ルールエンジン(依存なし・純粋関数)
 - `src/ui/` 画面(React)
-- `src/net/` オンライン対戦(Firebase Realtime Database)
+- `src/net/` オンライン対戦(PeerJS / WebRTC P2P)
 - `src/store/` 履歴・進行中対局の保存
 - `src/engine/` CPU(twixtbot モデルを ONNX Runtime Web で推論。Lv1〜3 は Policy のみ、MCTS は今後)
 - `public/models/twixtbot.onnx` 学習済みモデル(BonyJordan/twixtbot, MIT)

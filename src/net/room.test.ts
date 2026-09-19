@@ -1,14 +1,14 @@
 // ルームのトランザクション本体のテスト。
-// Firebase RTDB は null の値をキーごと落とすので、空き枠は undefined として届く点を再現する。
+// 空き枠は null の場合と未設定(undefined)の場合の両方があり得る点を再現する。
 import { describe, expect, it } from "vitest";
-import { joinTransition, moveTransition, normalizeCode, type RoomData } from "./room";
+import { joinTransition, mergeRemote, moveTransition, normalizeCode, type RoomData } from "./room";
 
 const settings = { pieRule: true, rules: "standard" as const };
 
 function room(partial: Partial<RoomData> = {}): RoomData {
   return {
     createdAt: 0, expiresAt: 0, settings,
-    players: { white: "host" }, // black は Firebase 側で落ちて undefined
+    players: { white: "host" }, // black は未設定(undefined)
     status: "waiting", moves: "", result: null,
     ...partial,
   };
@@ -78,5 +78,35 @@ describe("normalizeCode", () => {
   it("小文字・紛らわしい文字を正規化", () => {
     expect(normalizeCode(" myx-tz7 ")).toBe("MYXTZ7");
     expect(normalizeCode("O0I1ab")).toBe("0011AB");
+  });
+});
+
+describe("mergeRemote(再接続時の棋譜の突き合わせ)", () => {
+  const playing = (moves = "") => room({ players: { white: "w", black: "b" }, status: "playing", moves });
+  it("相手の棋譜が自分の続きなら採用する", () => {
+    const r = mergeRemote(playing("L12"), { moves: "L12 M14 N10" });
+    expect(r.moves).toBe("L12 M14 N10");
+    expect(r.status).toBe("playing");
+  });
+  it("自分の方が長ければ何もしない", () => {
+    const cur = playing("L12 M14");
+    expect(mergeRemote(cur, { moves: "L12" })).toBe(cur);
+  });
+  it("続きでない棋譜(分岐)は無視する", () => {
+    const cur = playing("L12 M14");
+    expect(mergeRemote(cur, { moves: "L12 N10 K13" })).toBe(cur);
+  });
+  it("壊れた棋譜は無視する", () => {
+    const cur = playing("L12");
+    expect(mergeRemote(cur, { moves: "L12 ZZ99" })).toBe(cur);
+  });
+  it("投了で終わっていれば結果を引き継ぐ", () => {
+    const r = mergeRemote(playing("L12"), { moves: "L12 resign", result: { winner: "white", reason: "resign" } });
+    expect(r.status).toBe("finished");
+    expect(r.result).toEqual({ winner: "white", reason: "resign" });
+  });
+  it("待機中のホストが再接続したゲストの棋譜を受け取ると対局中になる", () => {
+    const r = mergeRemote(room({ players: { white: "w", black: "b" }, status: "waiting" }), { moves: "L12" });
+    expect(r.status).toBe("playing");
   });
 });

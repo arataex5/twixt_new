@@ -13,6 +13,7 @@
 - TWIXT で「最強 CPU」と対戦できるアプリ。PWA と Android APK の両対応が必須。
 - 規模は控えめ: 出先でスマホから最強 CPU と対戦できれば十分。過剰な汎用化はしない。
 - 必須機能: CPU 戦(強さ数段階)、ローカル対戦、オンライン対戦(ルーム ID 入力)、パイルール ON/OFF。
+- 公開はクローズド(身内のみ)。サーバー運用はしない(2026-09-19 決定)。
 - 技術: Vite + React + TypeScript のみ(Python は照合テスト用途だけ)。CPU は twixtbot の学習済みモデルを
   ONNX Runtime Web で端末内推論(Worker)。サーバー側の推論は行わない。
 - オーナー: arata(GitHub: arataex5)。学習環境は個人 PC(GPU 1 枚程度)。
@@ -25,7 +26,7 @@
 | 2 | CPU 戦 Lv1〜3(Policy のみ、ONNX in Worker、Python 照合テスト 36 件一致) | 完了 |
 | 3 | MCTS Lv4〜6、時間制、進捗表示、キャンセル | 完了 |
 | 4 | 対局履歴・棋譜再生・続きから・局面から対局 | 完了 |
-| 5 | オンライン対戦(Firebase RTDB)。本番 Firebase で 2 クライアント検証済み | 完了 |
+| 5 | オンライン対戦(Firebase RTDB → 2026-09-19 に PeerJS P2P へ置換) | 完了 |
 | 6 | レベル校正。`?calib=1&a=5&b=6&n=10&t=10000&pie=1` で自動対局(`src/ui/CalibScreen.tsx`)。Lv6 = 10 秒 + 最低 60 回読み | 完了 |
 
 - レベル設定は `src/engine/levels.ts`。スマホ実測: 1 評価 ≈ 250 ms(PC は ≈ 170 ms)。Lv4 = 12 sims、Lv5 = 40 sims。
@@ -46,16 +47,16 @@
 - 大きなバイナリ(`public/models/twixtbot.onnx`、`public/ort/*.wasm`)は差し替えない限り触らない。
 - 行き詰まったら計画の見直しも含めて PDCA で回す(arata の希望)。
 
-## オンライン対戦(Firebase)の注意
+## オンライン対戦(PeerJS / P2P)の注意
 
-- Firebase プロジェクト `twixt-online`(RTDB asia-southeast1、匿名認証)。設定は `src/net/firebase.ts` に同梱。
-- セキュリティルールは `database.rules.json`(コンソールに貼って公開する運用)。
-- RTDB は `null` の値をキーごと落とす。受信側では空き枠が `undefined` になるので判定は `== null`。
-  `?mock=1` の localStorage バックエンドも同じ挙動に揃えてある(`src/net/mockBackend.ts`)。
-- トランザクション本体は純粋関数 `joinTransition` / `moveTransition`(`src/net/room.ts`)。テストは `src/net/room.test.ts`。
-- Anthropic のクラウド環境から Firebase ドメインへは(ネットワーク許可を Custom にしても)到達できなかった実績あり。
-  本番検証は Pages 版をユーザー側ブラウザで開いて行う。同一ページ内で `initializeAuth(app, { persistence: inMemoryPersistence })`
-  の別インスタンスを作れば 2 人目のプレイヤーを再現できる。
+- 2026-09-19 に Firebase から PeerJS に置き換えた(クローズド公開のためサーバー運用をなくす方針)。firebase 依存・`database.rules.json` は削除済み。
+- ホストの Peer ID = `twixt-<ルームコード>`。ホストが審判(`moveTransition`)、ゲストは `move` を送って `ack` を待つ。
+- 両者が `twixt.peer.room.<CODE>` に状態を保存。再接続時は `hello` で棋譜を送り、ホストが `mergeRemote` で長い方を採用する。
+- 切断時は 3 秒ごとに再接続。ホストの ID がサーバーに残っている(`unavailable-id`)場合も取り直す。
+- 手を預かるサーバーが無いので、非同期対局(相手不在時に打つ)は不可。TURN も無いので一部の NAT 環境ではつながらない。
+- 純粋関数 `joinTransition` / `moveTransition` / `mergeRemote` は `src/net/room.test.ts` でテスト。
+- Anthropic のクラウド環境からは PeerJS サーバーにも到達できない想定。本番検証は Pages 版をユーザー側ブラウザで開き、
+  同一ページ内で `new Peer()` をもう 1 つ作ってゲスト役にする。
 - ルームコードは `normalizeCode` で O→0、I→1 に正規化される。テスト用コードに O/I を含めないこと。
 
 ## コード構成
