@@ -146,3 +146,31 @@ textarea { width: 100%; }
 .calib-table td:first-child, .calib-table th:first-child { text-align: left; }
 .calib-list { font-size: 0.85em; margin: 8px 0; padding-left: 1.4em; }
 .calib textarea { width: 100%; font-family: monospace; font-size: 0.75em; }
+
+/* ---- 選択→確定 ---- */
+.confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--accent-2); border: 1px solid #c5d6f2; border-radius: 12px; padding: 10px 12px; }
+.confirm > span { flex: 1; min-width: 8em; }
+.confirm .coord { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1.15rem; color: var(--accent); }
+.pending-ring { animation: ring 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* ---- ヘルプ ---- */
+.help { position: relative; display: inline-block; }
+.help-btn { width: 22px; height: 22px; padding: 0; border-radius: 50%; font-size: 0.8rem; line-height: 1; color: var(--accent); border-color: #c5d6f2; background: var(--accent-2); vertical-align: middle; }
+.help-box { position: absolute; z-index: 20; left: 0; top: 28px; width: min(320px, 80vw); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 0.85rem; font-weight: 400; color: var(--fg); text-align: left; }
+.help-box p { margin: 6px 0; }
+.row .help-box { left: auto; right: -40px; }
+
+/* ---- 基本形 ---- */
+.patterns .pattern { border-top: 1px solid var(--line); padding: 6px 0; }
+.patterns .pattern summary { font-weight: 500; color: var(--fg); }
+.pattern-body { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0 4px; flex-wrap: wrap; }
+.pattern-svg { flex: none; max-width: 100%; height: auto; border-radius: 8px; }
+
+/* ---- 準備完了 ---- */
+.ready-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.ready-row > span:nth-child(2) { flex: 1; }
+.pill { padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+.pill.white { background: var(--white-peg); border: 1px solid var(--line); }
+.pill.black { background: var(--black-peg); color: #fff; }
+.ready-mark { font-size: 0.85rem; color: var(--muted); }
+.ready-mark.on { color: #1a7f37; font-weight: 700; }

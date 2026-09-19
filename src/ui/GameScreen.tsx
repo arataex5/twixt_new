@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LinkId, Player } from "../core/board";
 import { applyMove, newGame, replay, undo, type GameSettings, type GameState, type Move, type Result } from "../core/game";
+import { idx } from "../core/board";
 import { movesToStr, pointToStr, strToMoves } from "../core/notation";
 import { getEngine, type ThinkResult } from "../engine/EngineClient";
 import { levelSpec } from "../engine/levels";
 import { addRecord, clearInProgress, saveInProgress } from "../store/history";
 import { BoardSvg } from "./BoardSvg";
+import { HelpButton, PIE_RULE_HELP, PatternsPanel } from "./Help";
 
 export interface CpuConfig {
   /** CPU が持つ色 */
@@ -20,7 +22,7 @@ export interface OnlineConfig {
   myColor: Player;
   /** サーバー上の棋譜(購読で更新される) */
   moves: string;
-  status: "waiting" | "playing" | "finished";
+  status: "waiting" | "ready" | "playing" | "finished";
   /** サーバーが確定した結果(投了は手番に関係なく起きるので棋譜からは復元できない) */
   result: Result;
   opponentOnline: boolean;
@@ -55,6 +57,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
 
   const humanColor: Player | "both" = online ? online.myColor : cpu ? (cpu.color === "white" ? "black" : "white") : "both";
   const [sending, setSending] = useState(false);
+  const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
 
   // オンライン: サーバーの棋譜が更新されたら盤面を同期
   const onlineMoves = online?.moves;
@@ -166,8 +169,16 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.moves.length, state.result, cpu?.color, cpu?.level]);
 
+  // 誤タップ防止: タップで選択 → 「確定」で着手
   const onPlace = (x: number, y: number) => {
-    play({ type: "place", x, y, removeLinks: selected.size ? [...selected] : undefined });
+    if (state.board.cells[idx(x, y)] !== null) return;
+    setPending((p) => (p && p.x === x && p.y === y ? null : { x, y }));
+    setError(null);
+  };
+  const confirmPlace = () => {
+    if (!pending) return;
+    play({ type: "place", x: pending.x, y: pending.y, removeLinks: selected.size ? [...selected] : undefined });
+    setPending(null);
   };
 
   const onToggleLink = (id: LinkId) => {
@@ -194,6 +205,9 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     }
     setSelected(new Set());
   };
+
+  // 手番が変わったら選択は消す
+  useEffect(() => { setPending(null); }, [state.moves.length]);
 
   const rotated = rotateForBlack && state.toMove === "black" && !state.result;
   const status = useMemo(() => {
@@ -244,8 +258,17 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
           onToggleLink={onToggleLink}
           rotated={rotated}
           overlay={overlay}
+          pending={interactive ? pending : null}
         />
       </div>
+
+      {pending && interactive && (
+        <div className="confirm">
+          <span>選択中: <strong className="coord">{pointToStr(pending.x, pending.y)}</strong>{selected.size > 0 ? `(リンク ${selected.size} 本を外す)` : ""}</span>
+          <button className="primary" onClick={confirmPlace}>ここに置く</button>
+          <button onClick={() => setPending(null)}>取消</button>
+        </div>
+      )}
 
       {thinking && cpu && (
         <div className="think">
@@ -279,7 +302,10 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
 
       <div className="controls">
         {canHumanSwap && (
-          <button className="primary" onClick={() => play({ type: "swap" })}>スワップ(パイルール)</button>
+          <>
+            <button className="primary" onClick={() => { if (confirm("スワップしますか?(白の初手を奪って赤の駒にします)")) play({ type: "swap" }); }}>スワップ(パイルール)</button>
+            <HelpButton title="パイルール(スワップ)">{PIE_RULE_HELP}</HelpButton>
+          </>
         )}
         {!online && <button disabled={state.moves.length === 0} onClick={doUndo}>待った</button>}
         <button disabled={!!state.result} onClick={() => { if (confirm("投了しますか?")) { abortRef.current?.abort(); play({ type: "resign" }); } }}>投了</button>
@@ -287,6 +313,8 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         {!cpu && !online && <label className="toggle"><input type="checkbox" checked={rotateForBlack} onChange={(e) => setRotateForBlack(e.target.checked)} /> 赤番で盤を回転</label>}
         {cpu && <label className="toggle"><input type="checkbox" checked={showCandidates} onChange={(e) => setShowCandidates(e.target.checked)} /> CPUの候補手を表示</label>}
       </div>
+
+      <PatternsPanel />
 
       <details className="record">
         <summary>棋譜</summary>

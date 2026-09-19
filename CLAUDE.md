@@ -41,6 +41,11 @@
   `prefers-reduced-motion` でアニメは止まる。manifest/theme-color も #f5f2ea に変更。
   後手の駒は内部名 `black` のまま表示は「赤」(#d23c31)。最終手リングは青。盤の中央に縦横の点線ガイド。
 
+- 2026-09-19 操作系: 着手は「タップで選択(座標付きゴースト表示)→『ここに置く』で確定」方式(`GameScreen` の pending)。
+  `src/ui/Help.tsx` に「?」ヘルプ(パイルール・ルール差)と基本形リファレンス(`PatternsPanel`、展開式ミニ図)。
+- オンライン: ルーム作成時は設定不可(ランダム色・現在設定で作成)→ 待機/準備画面でホストのみ変更(`updateRoomSettings`、`host` uid で判定)。
+  ゲスト入室で status `ready` → 両者が `setReady` で準備完了すると `playing`(`readyTransition`)。設定変更で準備完了はリセット。
+
 ## 運用ルール
 
 - `main` に push → Pages デプロイと debug APK ビルドが自動で走る(`.github/workflows/`)。

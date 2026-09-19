@@ -1,7 +1,7 @@
 // ルームのトランザクション本体のテスト。
 // 空き枠は null の場合と未設定(undefined)の場合の両方があり得る点を再現する。
 import { describe, expect, it } from "vitest";
-import { joinTransition, mergeRemote, moveTransition, normalizeCode, type RoomData } from "./room";
+import { joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, type RoomData } from "./room";
 
 const settings = { pieRule: true, rules: "standard" as const };
 
@@ -19,7 +19,7 @@ describe("joinTransition", () => {
     const r = joinTransition(room(), "guest");
     expect(r.myColor).toBe("black");
     expect(r.next?.players).toEqual({ white: "host", black: "guest" });
-    expect(r.next?.status).toBe("playing");
+    expect(r.next?.status).toBe("ready");
   });
   it("空き枠が null でも参加できる(mock 互換)", () => {
     const r = joinTransition(room({ players: { white: null, black: "host" } }), "guest");
@@ -108,5 +108,27 @@ describe("mergeRemote(再接続時の棋譜の突き合わせ)", () => {
   it("待機中のホストが再接続したゲストの棋譜を受け取ると対局中になる", () => {
     const r = mergeRemote(room({ players: { white: "w", black: "b" }, status: "waiting" }), { moves: "L12" });
     expect(r.status).toBe("playing");
+  });
+});
+
+describe("readyTransition", () => {
+  const ready = () => room({ players: { white: "w", black: "b" }, status: "ready", ready: {} });
+  it("片方だけでは始まらない", () => {
+    const r = readyTransition(ready(), "w", true) as RoomData;
+    expect(r.status).toBe("ready");
+    expect(r.ready).toEqual({ white: true });
+  });
+  it("両者そろうと playing になる", () => {
+    const r1 = readyTransition(ready(), "w", true) as RoomData;
+    const r2 = readyTransition(r1, "b", true) as RoomData;
+    expect(r2.status).toBe("playing");
+  });
+  it("取り消しできる", () => {
+    const r1 = readyTransition(ready(), "w", true) as RoomData;
+    const r2 = readyTransition(r1, "w", false) as RoomData;
+    expect(r2.ready).toEqual({ white: false });
+  });
+  it("相手未入室なら拒否", () => {
+    expect(readyTransition(room(), "host", true)).toMatch(/入室/);
   });
 });

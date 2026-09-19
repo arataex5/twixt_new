@@ -8,6 +8,7 @@ import { ReplayScreen } from "./ui/ReplayScreen";
 import { OnlineScreen } from "./ui/OnlineScreen";
 import { AVAILABLE_LEVELS } from "./engine/levels";
 import { GameScreen, type CpuConfig } from "./ui/GameScreen";
+import { HelpButton, PIE_RULE_HELP, RULES_HELP } from "./ui/Help";
 import { CalibScreen, parseCalibParams } from "./ui/CalibScreen";
 
 type Mode = "local" | "cpu";
@@ -139,11 +140,11 @@ export default function App() {
           </>
         )}
         <label className="row">
-          <span>パイルール(スワップ)<br /><small className="muted">後手は先手の初手を「奪う」ことができる。初手は主対角線で鏡映され赤の駒になる</small></span>
+          <span>パイルール(スワップ) <HelpButton title="パイルール(スワップ)">{PIE_RULE_HELP}</HelpButton><br /><small className="muted">後手は先手の初手を「奪う」ことができる。初手は主対角線で鏡映され赤の駒になる</small></span>
           <input type="checkbox" checked={settings.pieRule} onChange={(e) => setSettings({ ...settings, pieRule: e.target.checked })} />
         </label>
         <label className="row">
-          <span>ルール</span>
+          <span>ルール <HelpButton title="ルールの違い">{RULES_HELP.standard}{RULES_HELP.pp}</HelpButton></span>
           <select value={settings.rules} onChange={(e) => setSettings({ ...settings, rules: e.target.value as GameSettings["rules"] })}>
             <option value="standard">標準(リンク除去あり・交差不可)</option>
             <option value="pp">PP(自リンク交差可・除去なし)</option>

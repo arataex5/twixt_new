@@ -20,9 +20,14 @@ export interface RoomData {
   createdAt: number;
   expiresAt: number;
   settings: GameSettings;
+  /** ルームを作った側の uid(設定を変更できる人) */
+  host?: string;
   /** 空き枠は null または未設定(undefined)。判定は == null で行う */
   players: { white?: string | null; black?: string | null };
-  status: "waiting" | "playing" | "finished";
+  /** waiting: 相手待ち / ready: 両者入室・準備確認中 / playing / finished */
+  status: "waiting" | "ready" | "playing" | "finished";
+  /** 準備完了フラグ(ready 中のみ意味を持つ) */
+  ready?: { white?: boolean; black?: boolean };
   /** 棋譜(空白区切り) */
   moves: string;
   result: Result;
@@ -34,6 +39,8 @@ export interface RoomView {
   myUid: string;
   myColor: Player | null;
   opponentOnline: boolean;
+  /** ルームを作った側の uid */
+  hostUid: string | null;
 }
 
 const ROOM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -86,7 +93,8 @@ export function joinTransition(cur: RoomData | null, uid: string): { next: RoomD
   else if (players.black == null) { myColor = "black"; players.black = uid; }
   else return { next: undefined, myColor: null };
   cur.players = players;
-  cur.status = "playing";
+  cur.status = "ready";
+  cur.ready = {};
   return { next: cur, myColor };
 }
 
@@ -143,13 +151,24 @@ export function mergeRemote(cur: RoomData, remote: { moves?: string; result?: Re
     } else if (st.result) {
       next.result = st.result;
       next.status = "finished";
-    } else if (cur.status === "waiting") {
+    } else if (cur.status === "waiting" || cur.status === "ready") {
       next.status = "playing";
     }
     return next;
   } catch {
     return cur;
   }
+}
+
+/** 準備完了の切り替え。両者そろえば対局開始(playing)。戻り値: 文字列 = 拒否理由 */
+export function readyTransition(cur: RoomData, uid: string, ready: boolean): RoomData | string {
+  if (cur.status !== "ready") return cur.status === "playing" ? "対局はもう始まっています" : "相手がまだ入室していません";
+  const players = cur.players ?? {};
+  const color: Player | null = players.white === uid ? "white" : players.black === uid ? "black" : null;
+  if (!color) return "参加者ではありません";
+  cur.ready = { ...(cur.ready ?? {}), [color]: ready };
+  if (cur.ready.white && cur.ready.black) { cur.status = "playing"; cur.ready = undefined; }
+  return cur;
 }
 
 // ---------------------------------------------------------------------------
@@ -187,6 +206,7 @@ type Msg =
   | { t: "move"; id: number; uid: string; move: Move; expectedIndex: number }
   | { t: "ack"; id: number; ok: boolean; reason?: string }
   | { t: "state"; data: RoomData }
+  | { t: "ready"; uid: string; ready: boolean }
   | { t: "bye" };
 
 interface Session {
@@ -215,7 +235,7 @@ function peerId(code: string) { return PEER_PREFIX + code; }
 function clone<T>(v: T): T { return JSON.parse(JSON.stringify(v)) as T; }
 
 function view(s: Session): RoomView {
-  return { code: s.code, data: clone(s.data), myUid: s.uid, myColor: s.myColor, opponentOnline: !!s.conn?.open };
+  return { code: s.code, data: clone(s.data), myUid: s.uid, myColor: s.myColor, opponentOnline: !!s.conn?.open, hostUid: s.data.host ?? (s.role === "host" ? s.uid : null) };
 }
 
 function notify(s: Session) {
@@ -318,6 +338,13 @@ function attachHostConn(s: Session, conn: DataConnection) {
       safeSend(conn, { t: "ack", id: m.id, ok: true });
       safeSend(conn, { t: "state", data: clone(s.data) });
       notify(s);
+    } else if (m.t === "ready") {
+      const r = readyTransition(clone(s.data), m.uid, m.ready);
+      if (typeof r === "string") return;
+      s.data = r;
+      persist(s);
+      safeSend(conn, { t: "state", data: clone(s.data) });
+      notify(s);
     } else if (m.t === "bye") {
       if (s.conn === conn) { s.conn = null; notify(s); }
     }
@@ -392,6 +419,9 @@ function connectToHost(s: Session) {
       if (w.length) { s.alive = false; destroyPeer(s); }
     } else if (m.t === "state") {
       s.data = m.data;
+      // ホストが待機中に色を変えた場合に追従する
+      const pl = m.data.players ?? {};
+      if (pl.white === s.uid) s.myColor = "white"; else if (pl.black === s.uid) s.myColor = "black";
       persist(s);
       notify(s);
     } else if (m.t === "ack") {
@@ -436,7 +466,7 @@ export async function createRoom(settings: GameSettings, hostColor: Player | "ra
   const myColor: Player = hostColor === "random" ? (Math.random() < 0.5 ? "white" : "black") : hostColor;
   const now = Date.now();
   const mk = (): RoomData => ({
-    createdAt: now, expiresAt: now + ROOM_TTL_MS, settings,
+    createdAt: now, expiresAt: now + ROOM_TTL_MS, settings, host: uid,
     players: { white: myColor === "white" ? uid : null, black: myColor === "black" ? uid : null },
     status: "waiting", moves: "", result: null,
   });
@@ -519,7 +549,7 @@ export function subscribeRoom(code: string, uid: string, cb: (view: RoomView | n
     const toView = (data: RoomData | null): RoomView | null => {
       if (!data) return null;
       const myColor: Player | null = data.players?.white === uid ? "white" : data.players?.black === uid ? "black" : null;
-      return { code, data: { ...data, moves: data.moves ?? "" }, myUid: uid, myColor, opponentOnline: data.status !== "waiting" };
+      return { code, data: { ...data, moves: data.moves ?? "" }, myUid: uid, myColor, opponentOnline: data.status !== "waiting", hostUid: data.host ?? null };
     };
     return mockSubscribe(code, (d) => cb(toView(d)));
   }
@@ -566,12 +596,13 @@ export async function sendMove(code: string, uid: string, move: Move, expectedIn
 /** 待機中のルーム設定(自分の色・ルール)を変更する。ホストのみ、相手が参加する前だけ */
 export async function updateRoomSettings(code: string, uid: string, settings: GameSettings, myColor: Player): Promise<void> {
   const apply = (cur: RoomData): RoomData | string => {
-    if (cur.status !== "waiting") return "対局が始まっているため変更できません";
+    if (cur.status !== "waiting" && cur.status !== "ready") return "対局が始まっているため変更できません";
+    if (cur.host && cur.host !== uid) return "ホストのみ変更できます";
     const players = cur.players ?? {};
-    const others = [players.white, players.black].filter((p) => p && p !== uid);
-    if (others.length > 0) return "相手が参加済みのため変更できません";
+    const other = [players.white, players.black].find((p) => p && p !== uid) ?? null;
     cur.settings = settings;
-    cur.players = { white: myColor === "white" ? uid : null, black: myColor === "black" ? uid : null };
+    cur.players = { white: myColor === "white" ? uid : other, black: myColor === "black" ? uid : other };
+    if (cur.status === "ready") cur.ready = {}; // 設定が変わったので準備完了をやり直す
     return cur;
   };
   if (MOCK) {
@@ -590,18 +621,41 @@ export async function updateRoomSettings(code: string, uid: string, settings: Ga
   notify(s);
 }
 
+/** 準備完了/取り消し。両者そろうと対局開始 */
+export async function setReady(code: string, uid: string, ready: boolean): Promise<void> {
+  if (MOCK) {
+    let reason = "";
+    const r = mockTransaction(code, (cur) => { if (!cur) { reason = "ルームがありません"; return; } const t = readyTransition(cur, uid, ready); if (typeof t === "string") { reason = t; return; } return t; });
+    if (!r.committed) throw new Error(reason);
+    return;
+  }
+  const s = sessions.get(code);
+  if (!s || !s.alive) throw new Error("ルームに接続していません");
+  if (s.role === "host") {
+    const r = readyTransition(clone(s.data), uid, ready);
+    if (typeof r === "string") throw new Error(r);
+    s.data = r;
+    persist(s);
+    safeSend(s.conn, { t: "state", data: clone(s.data) });
+    notify(s);
+    return;
+  }
+  if (!s.conn?.open) throw new Error("相手と接続されていません(再接続中)");
+  safeSend(s.conn, { t: "ready", uid, ready });
+}
+
 /** ルームを離れる。待機中・終了済みなら保存も消す(対局中は「直前のルームに戻る」用に残す) */
 export async function leaveRoom(code: string, uid: string): Promise<void> {
   if (MOCK) {
     const data = mockGet(code);
     if (!data) return;
     const others = [data.players.white, data.players.black].filter((p) => p && p !== uid);
-    if (data.status === "waiting" && others.length === 0) mockSet(code, null);
+    if ((data.status === "waiting" || data.status === "ready") && others.length === 0) mockSet(code, null);
     return;
   }
   const s = sessions.get(code);
   if (!s) return;
   const status = s.data.status;
   closeSession(s);
-  if (status === "waiting" || status === "finished") forget(code);
+  if (status === "waiting" || status === "ready" || status === "finished") forget(code);
 }

@@ -15,6 +15,8 @@ export interface BoardSvgProps {
   rotated?: boolean;
   /** 候補手のヒートマップ等(cell index → 0..1) */
   overlay?: Map<number, number>;
+  /** 選択中(未確定)の着手位置 */
+  pending?: { x: number; y: number } | null;
 }
 
 const CELL = 24; // 1 穴のピクセル幅(viewBox 単位)
@@ -37,7 +39,7 @@ const COLORS = {
 };
 
 export function BoardSvg(props: BoardSvgProps) {
-  const { state, interactive, onPlace, selectedLinks, onToggleLink, rotated, overlay } = props;
+  const { state, interactive, onPlace, selectedLinks, onToggleLink, rotated, overlay, pending } = props;
   const svgRef = useRef<SVGSVGElement>(null);
   const [view, setView] = useState({ x: 0, y: 0, s: 1 }); // viewBox: origin & scale (1 = 全体)
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -245,6 +247,22 @@ export function BoardSvg(props: BoardSvgProps) {
         {holes}
         {outlines}
         {links}
+        {pending && state.board.cells[idx(pending.x, pending.y)] === null && (() => {
+          const cx = PAD + pending.x * CELL + CELL / 2, cy = PAD + pending.y * CELL + CELL / 2;
+          const label = pointToStr(pending.x, pending.y);
+          const above = pending.y > 1;
+          const ly = above ? cy - CELL * 0.95 : cy + CELL * 0.95;
+          return (
+            <g className="pending" pointerEvents="none">
+              <circle className="pending-ring" cx={cx} cy={cy} r={CELL * 0.55} fill="none" stroke={COLORS.candidate} strokeWidth={2.5} />
+              <circle cx={cx} cy={cy} r={CELL * 0.36} fill={state.toMove === "white" ? COLORS.white : COLORS.black} stroke={state.toMove === "white" ? COLORS.whiteEdge : COLORS.blackEdge} strokeWidth={1.5} opacity={0.6} />
+              <g transform={rotated ? `rotate(180 ${cx} ${ly})` : undefined}>
+                <rect x={cx - 17} y={ly - 9} width={34} height={18} rx={5} fill={COLORS.candidate} />
+                <text x={cx} y={ly + 4.5} fontSize={12} fontWeight={700} textAnchor="middle" fill="#fff">{label}</text>
+              </g>
+            </g>
+          );
+        })()}
       </g>
     </svg>
   );
