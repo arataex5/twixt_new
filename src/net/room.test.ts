@@ -1,7 +1,7 @@
 // ルームのトランザクション本体のテスト。
 // 空き枠は null の場合と未設定(undefined)の場合の両方があり得る点を再現する。
 import { describe, expect, it } from "vitest";
-import { drawTransition, joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, startTransition, type RoomData } from "./room";
+import { drawTransition, rematchTransition, joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, startTransition, type RoomData } from "./room";
 
 const settings = { pieRule: true, rules: "standard" as const };
 
@@ -170,5 +170,19 @@ describe("drawTransition(引き分け提案)", () => {
   });
   it("提案が無いときの受諾は拒否", () => {
     expect(drawTransition(playing(), "b", "accept")).toMatch(/提案はありません/);
+  });
+});
+
+describe("rematchTransition(再戦)", () => {
+  it("終了後に色を入れ替えて準備確認に戻る", () => {
+    const fin = room({ host: "w", players: { white: "w", black: "b" }, status: "finished", moves: "L12 resign", result: { winner: "black", reason: "resign" } });
+    const r = rematchTransition(fin, "b") as RoomData;
+    expect(r.status).toBe("ready");
+    expect(r.players).toEqual({ white: "b", black: "w" });
+    expect(r.moves).toBe("");
+    expect(r.result).toBeNull();
+  });
+  it("対局中は不可", () => {
+    expect(rematchTransition(room({ players: { white: "w", black: "b" }, status: "playing" }), "w")).toMatch(/終わって/);
   });
 });

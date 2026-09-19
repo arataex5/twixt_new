@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Player } from "../core/board";
 import type { GameSettings, Move } from "../core/game";
-import { createRoom, drawAction, ensureSignedIn, joinRoom, leaveRoom, normalizeCode, sendMove, setReady, startGame, subscribeRoom, updateRoomSettings, type RoomView } from "../net/room";
+import { createRoom, drawAction, ensureSignedIn, joinRoom, leaveRoom, normalizeCode, requestRematch, sendMove, setReady, startGame, subscribeRoom, updateRoomSettings, type RoomView } from "../net/room";
 import { GameScreen } from "./GameScreen";
 import { HelpButton, PIE_RULE_HELP, RULES_HELP } from "./Help";
 
@@ -152,7 +152,7 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
       <GameScreen
         key={phase.code}
         settings={view.data.settings}
-        online={{ code: phase.code, myColor, moves: view.data.moves, status: view.data.status, result: view.data.result ?? null, opponentOnline: view.opponentOnline, send, drawOffer: view.data.drawOffer ?? null, draw: (action) => drawAction(phase.code, phase.uid, action) }}
+        online={{ code: phase.code, myColor, moves: view.data.moves, status: view.data.status, result: view.data.result ?? null, opponentOnline: view.opponentOnline, send, drawOffer: view.data.drawOffer ?? null, draw: (action) => drawAction(phase.code, phase.uid, action), rematch: () => requestRematch(phase.code, phase.uid) }}
         initialMoves={[]}
         onExit={exitRoom}
       />

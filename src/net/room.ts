@@ -198,6 +198,20 @@ export function drawTransition(cur: RoomData, uid: string, action: "offer" | "ac
   return cur;
 }
 
+/** 再戦: 終了した対局を準備確認に戻す。色は入れ替える。どちらの参加者からでも要求できる */
+export function rematchTransition(cur: RoomData, uid: string): RoomData | string {
+  if (cur.status !== "finished") return "対局はまだ終わっていません";
+  const players = cur.players ?? {};
+  if (players.white !== uid && players.black !== uid) return "参加者ではありません";
+  cur.players = { white: players.black ?? null, black: players.white ?? null };
+  cur.status = "ready";
+  cur.ready = {};
+  cur.moves = "";
+  cur.result = null;
+  cur.drawOffer = null;
+  return cur;
+}
+
 /** ホストが対局を開始する。ゲストが準備完了していることが条件 */
 export function startTransition(cur: RoomData, uid: string): RoomData | string {
   if (cur.status === "playing") return "対局はもう始まっています";
@@ -250,6 +264,7 @@ type Msg =
   | { t: "state"; data: RoomData }
   | { t: "ready"; uid: string; ready: boolean }
   | { t: "draw"; uid: string; action: "offer" | "accept" | "decline" }
+  | { t: "rematch"; uid: string }
   | { t: "bye" };
 
 interface Session {
@@ -380,6 +395,15 @@ function attachHostConn(s: Session, conn: DataConnection) {
       persist(s);
       // ack に最新状態を同梱して往復を 1 回にする
       safeSend(conn, { t: "ack", id: m.id, ok: true, data: clone(s.data) });
+      notify(s);
+    } else if (m.t === "rematch") {
+      const r = rematchTransition(clone(s.data), m.uid);
+      if (typeof r === "string") return;
+      s.data = r;
+      persist(s);
+      const pl = r.players ?? {};
+      s.myColor = pl.white === s.uid ? "white" : "black";
+      safeSend(conn, { t: "state", data: clone(s.data) });
       notify(s);
     } else if (m.t === "draw") {
       const r = drawTransition(clone(s.data), m.uid, m.action);
@@ -734,6 +758,31 @@ export async function drawAction(code: string, uid: string, action: "offer" | "a
   }
   if (!s.conn?.open) throw new Error("相手と接続されていません(再接続中)");
   safeSend(s.conn, { t: "draw", uid, action });
+}
+
+/** 再戦を要求する(色を入れ替えて準備確認へ) */
+export async function requestRematch(code: string, uid: string): Promise<void> {
+  if (MOCK) {
+    let reason = "";
+    const r = mockTransaction(code, (cur) => { if (!cur) { reason = "ルームがありません"; return; } const t = rematchTransition(cur, uid); if (typeof t === "string") { reason = t; return; } return t; });
+    if (!r.committed) throw new Error(reason);
+    return;
+  }
+  const s = sessions.get(code);
+  if (!s || !s.alive) throw new Error("ルームに接続していません");
+  if (s.role === "host") {
+    const r = rematchTransition(clone(s.data), uid);
+    if (typeof r === "string") throw new Error(r);
+    s.data = r;
+    persist(s);
+    const pl = r.players ?? {};
+    s.myColor = pl.white === s.uid ? "white" : "black";
+    safeSend(s.conn, { t: "state", data: clone(s.data) });
+    notify(s);
+    return;
+  }
+  if (!s.conn?.open) throw new Error("相手と接続されていません(再接続中)");
+  safeSend(s.conn, { t: "rematch", uid });
 }
 
 /** ルームを離れる。待機中・終了済みなら保存も消す(対局中は「直前のルームに戻る」用に残す) */

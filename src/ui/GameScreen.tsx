@@ -30,6 +30,8 @@ export interface OnlineConfig {
   /** 引き分け提案中の側 */
   drawOffer?: Player | null;
   draw?: (action: "offer" | "accept" | "decline") => Promise<void>;
+  /** 再戦(色を入れ替えて準備確認へ) */
+  rematch?: () => Promise<void>;
 }
 
 export interface GameScreenProps {
@@ -61,6 +63,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
   const humanColor: Player | "both" = online ? online.myColor : cpu ? (cpu.color === "white" ? "black" : "white") : "both";
   const [sending, setSending] = useState(false);
   const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
+  const [showEnd, setShowEnd] = useState(false);
 
   // オンライン: サーバーの棋譜が更新されたら盤面を同期
   const onlineMoves = online?.moves;
@@ -212,6 +215,29 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
   // 手番が変わったら選択は消す
   useEffect(() => { setPending(null); }, [state.moves.length]);
 
+  // 終局: 勝利ラインを少し見せてから結果画面を出す
+  useEffect(() => {
+    if (!state.result) { setShowEnd(false); return; }
+    const t = setTimeout(() => setShowEnd(true), 900);
+    return () => clearTimeout(t);
+  }, [state.result]);
+
+  const restart = () => {
+    const n = newGame(settings); stateRef.current = n; setState(n); setSelected(new Set()); setLastThink(null); setPending(null); setError(null);
+    savedRef.current = false; startedAtRef.current = new Date().toISOString();
+  };
+  const outcome = useMemo(() => {
+    const r = state.result;
+    if (!r) return null;
+    const reason = r.reason === "connect" ? "連結" : r.reason === "resign" ? "投了" : r.reason === "agreement" ? "合意" : "双方とも連結不可";
+    if (r.winner === "draw") return { kind: "draw" as const, title: "引き分け", sub: reason, emoji: "🤝" };
+    if (humanColor === "both") return { kind: "win" as const, title: `${NAME[r.winner]} の勝ち`, sub: reason, emoji: "🏆" };
+    const win = r.winner === humanColor;
+    return win
+      ? { kind: "win" as const, title: "あなたの勝ち!", sub: `${NAME[r.winner]}・${reason}`, emoji: "🏆" }
+      : { kind: "lose" as const, title: "あなたの負け", sub: `${NAME[r.winner]} の勝ち・${reason}`, emoji: "💦" };
+  }, [state.result, humanColor]);
+
   const rotated = rotateForBlack && state.toMove === "black" && !state.result;
   const status = useMemo(() => {
     if (state.result) {
@@ -349,12 +375,54 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         <button onClick={() => navigator.clipboard?.writeText(movesToStr(state.moves))}>コピー</button>
       </details>
 
-      {state.result && (
+      {state.result && outcome && !showEnd && (
         <div className="result">
-          <strong>{status}</strong>
-          {!online && <button className="primary" onClick={() => { const n = newGame(settings); stateRef.current = n; setState(n); setSelected(new Set()); setLastThink(null); savedRef.current = false; startedAtRef.current = new Date().toISOString(); }}>もう一度</button>}
+          <strong>{outcome.emoji} {outcome.title}</strong>
+          <div className="controls">
+            {online?.rematch ? <button className="primary" onClick={() => online.rematch!().catch((e) => setError((e as Error).message))}>もう一度遊ぶ</button>
+              : <button className="primary" onClick={restart}>もう一度遊ぶ</button>}
+            <button onClick={onExit}>タイトルへ戻る</button>
+          </div>
         </div>
       )}
+      {showEnd && outcome && (
+        <div className="gameover-backdrop" onClick={() => setShowEnd(false)}>
+          {outcome.kind === "win" && <Confetti />}
+          <div className={`gameover ${outcome.kind}`} onClick={(e) => e.stopPropagation()}>
+            <div className="gameover-emoji">{outcome.emoji}</div>
+            <h2>{outcome.title}</h2>
+            <p className="muted">{outcome.sub}{state.moves.length ? ` · ${state.moves.length} 手` : ""}</p>
+            {online?.rematch ? (
+              <button className="primary big" onClick={() => { setShowEnd(false); online.rematch!().catch((e) => setError((e as Error).message)); }}>もう一度遊ぶ<small>色を入れ替えて再戦</small></button>
+            ) : (
+              <button className="primary big" onClick={() => { setShowEnd(false); restart(); }}>もう一度遊ぶ</button>
+            )}
+            <button className="big" onClick={onExit}>タイトルへ戻る</button>
+            <button className="small ghost" onClick={() => setShowEnd(false)}>盤面を見る</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 勝利時の紙吹雪(CSS アニメーション、数秒で終わる) */
+function Confetti() {
+  const pieces = useMemo(() => Array.from({ length: 48 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 0.8,
+    dur: 2.2 + Math.random() * 1.4,
+    rot: Math.random() * 360,
+    color: ["#f2b632", "#d23c31", "#2f5fb3", "#3cae6b", "#fbfaf6", "#f28c28"][i % 6],
+    w: 6 + Math.random() * 6,
+    h: 10 + Math.random() * 8,
+  })), []);
+  return (
+    <div className="confetti" aria-hidden="true">
+      {pieces.map((p) => (
+        <span key={p.id} style={{ left: `${p.left}%`, animationDelay: `${p.delay}s`, animationDuration: `${p.dur}s`, background: p.color, width: p.w, height: p.h, transform: `rotate(${p.rot}deg)` }} />
+      ))}
     </div>
   );
 }
