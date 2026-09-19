@@ -38,7 +38,7 @@ export function HistoryScreen({ onExit, onOpen }: HistoryScreenProps) {
       <ul className="history">
         {list.map((r) => {
           const title = r.mode === "cpu" && r.cpu
-            ? `CPU Lv${r.cpu.level} ${levelSpec(r.cpu.level).name}(あなた: ${r.cpu.color === "white" ? "黒" : "白"})`
+            ? `CPU Lv${r.cpu.level} ${levelSpec(r.cpu.level).name}(あなた: ${r.cpu.color === "white" ? "赤" : "白"})`
             : r.mode === "online" ? "オンライン対戦" : "ローカル対戦";
           return (
             <li key={r.id} className="history-item">

@@ -117,7 +117,7 @@ export default function App() {
               <span>あなたの色</span>
               <select value={prefs.humanColor} onChange={(e) => setPrefs({ ...prefs, humanColor: e.target.value as Prefs["humanColor"] })}>
                 <option value="white">白(先手・上下)</option>
-                <option value="black">黒(後手・左右)</option>
+                <option value="black">赤(後手・左右)</option>
                 <option value="random">ランダム</option>
               </select>
             </label>
@@ -139,7 +139,7 @@ export default function App() {
           </>
         )}
         <label className="row">
-          <span>パイルール(スワップ)<br /><small className="muted">後手は先手の初手を「奪う」ことができる。初手は主対角線で鏡映され黒の駒になる</small></span>
+          <span>パイルール(スワップ)<br /><small className="muted">後手は先手の初手を「奪う」ことができる。初手は主対角線で鏡映され赤の駒になる</small></span>
           <input type="checkbox" checked={settings.pieRule} onChange={(e) => setSettings({ ...settings, pieRule: e.target.checked })} />
         </label>
         <label className="row">
@@ -165,7 +165,7 @@ export default function App() {
     <div className="screen home">
       <Logo />
       <h1>TWIXT</h1>
-      <p className="tagline">白は上下、黒は左右を先につないだ方が勝ち</p>
+      <p className="tagline">白は上下、赤は左右を先につないだ方が勝ち</p>
       <div className="menu">
         {inProgress && (
           <button className="primary big" onClick={resume}>
@@ -198,14 +198,14 @@ function Logo() {
   const links: [number, number][] = [[0, 1], [1, 2], [3, 4], [4, 5]];
   return (
     <svg className="logo" viewBox="0 0 96 96" aria-hidden="true">
-      <rect x="2" y="2" width="92" height="92" rx="18" fill="#efe6d2" stroke="#d9cdb2" strokeWidth="2" />
+      <rect x="2" y="2" width="92" height="92" rx="18" fill="#dcc59c" stroke="#bfa478" strokeWidth="2" />
       {Array.from({ length: 5 }, (_, x) => Array.from({ length: 5 }, (_, y) => {
-        const [cx, cy] = p(x, y); return <circle key={`${x}${y}`} cx={cx} cy={cy} r="2.2" fill="#b9aa87" />;
+        const [cx, cy] = p(x, y); return <circle key={`${x}${y}`} cx={cx} cy={cy} r="2.2" fill="#a08a5e" />;
       }))}
       {links.map(([a, b], i) => { const [x1, y1] = p(pegs[a][0], pegs[a][1]); const [x2, y2] = p(pegs[b][0], pegs[b][1]);
-        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={pegs[a][2] === "w" ? "#fbfaf6" : "#22262b"} strokeWidth="5" strokeLinecap="round" />; })}
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={pegs[a][2] === "w" ? "#fbfaf6" : "#c8352b"} strokeWidth="5" strokeLinecap="round" />; })}
       {pegs.map(([x, y, c], i) => { const [cx, cy] = p(x, y);
-        return <circle key={i} cx={cx} cy={cy} r="6.5" fill={c === "w" ? "#fbfaf6" : "#22262b"} stroke={c === "w" ? "#b9b2a2" : "#0d0f12"} strokeWidth="1.5" />; })}
+        return <circle key={i} cx={cx} cy={cy} r="6.5" fill={c === "w" ? "#fbfaf6" : "#d23c31"} stroke={c === "w" ? "#6f6350" : "#8f1f18"} strokeWidth="1.5" />; })}
     </svg>
   );
 }

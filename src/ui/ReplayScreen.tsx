@@ -46,7 +46,7 @@ export function ReplayScreen({ title, settings, moves, onExit, onPlayFrom }: Rep
       </div>
       <div className="muted small">
         {last ? `${ply} 手目: ${moveToStr(last)}` : "開始局面"}
-        {state.result ? ` — ${state.result.winner === "draw" ? "引き分け" : state.result.winner === "white" ? "白の勝ち" : "黒の勝ち"}` : ""}
+        {state.result ? ` — ${state.result.winner === "draw" ? "引き分け" : state.result.winner === "white" ? "白の勝ち" : "赤の勝ち"}` : ""}
       </div>
 
       <div className="controls">

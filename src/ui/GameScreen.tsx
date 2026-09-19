@@ -37,7 +37,7 @@ export interface GameScreenProps {
   onExit: () => void;
 }
 
-const NAME: Record<Player, string> = { white: "白(上下)", black: "黒(左右)" };
+const NAME: Record<Player, string> = { white: "白(上下)", black: "赤(左右)" };
 
 export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onExit }: GameScreenProps) {
   const [state, setState] = useState<GameState>(() => (initialMoves?.length ? replay(settings, initialMoves) : newGame(settings)));
@@ -206,14 +206,14 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     return `${NAME[state.toMove]} の番${who ? `(${who})` : ""}${sending ? " 送信中…" : ""}`;
   }, [state, cpu, online, thinking, sending]);
 
-  // スワップ(パイルール)の説明: 初手のペグは主対角線で鏡映されて黒の駒になる
+  // スワップ(パイルール)の説明: 初手のペグは主対角線で鏡映されて赤の駒になる
   const swapNotice = useMemo(() => {
     const last = state.moves[state.moves.length - 1];
     const first = state.moves[0];
     if (!last || last.type !== "swap" || !first || first.type !== "place") return null;
     const from = pointToStr(first.x, first.y), to = pointToStr(first.y, first.x);
     const who = online ? (online.myColor === "black" ? "あなた" : "相手") : cpu ? (cpu.color === "black" ? "CPU" : "あなた") : "後手";
-    return `${who}がスワップしました: 初手 ${from}(白) は ${to}(黒) に鏡映され、後手の駒になりました。白の番です。`;
+    return `${who}がスワップしました: 初手 ${from}(白) は ${to}(赤) に鏡映され、後手の駒になりました。白の番です。`;
   }, [state.moves, cpu]);
 
   const overlay = useMemo(() => {
@@ -284,7 +284,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         {!online && <button disabled={state.moves.length === 0} onClick={doUndo}>待った</button>}
         <button disabled={!!state.result} onClick={() => { if (confirm("投了しますか?")) { abortRef.current?.abort(); play({ type: "resign" }); } }}>投了</button>
         {!cpu && !online && <button disabled={!!state.result} onClick={() => { if (confirm("引き分けにしますか?")) play({ type: "draw" }); }}>引き分け</button>}
-        {!cpu && !online && <label className="toggle"><input type="checkbox" checked={rotateForBlack} onChange={(e) => setRotateForBlack(e.target.checked)} /> 黒番で盤を回転</label>}
+        {!cpu && !online && <label className="toggle"><input type="checkbox" checked={rotateForBlack} onChange={(e) => setRotateForBlack(e.target.checked)} /> 赤番で盤を回転</label>}
         {cpu && <label className="toggle"><input type="checkbox" checked={showCandidates} onChange={(e) => setShowCandidates(e.target.checked)} /> CPUの候補手を表示</label>}
       </div>
 

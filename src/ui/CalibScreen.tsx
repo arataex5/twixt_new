@@ -84,7 +84,7 @@ export function CalibScreen({ params, onExit }: { params: CalibParams; onExit: (
           msByLevel[level].push(performance.now() - t0);
           state = applyMove(state, r.move);
           setCurrent({ index: g + 1, state, whiteLevel, blackLevel });
-          setStatus(`第 ${g + 1} 局 ${state.moves.length} 手目(白 Lv${whiteLevel} / 黒 Lv${blackLevel})`);
+          setStatus(`第 ${g + 1} 局 ${state.moves.length} 手目(白 Lv${whiteLevel} / 赤 Lv${blackLevel})`);
         }
         rec.winner = state.result ? state.result.winner : null;
         rec.winnerLevel = rec.winner === "white" ? whiteLevel : rec.winner === "black" ? blackLevel : null;
@@ -147,7 +147,7 @@ export function CalibScreen({ params, onExit }: { params: CalibParams; onExit: (
       <ol className="calib-list">
         {records.map((r) => (
           <li key={r.index}>
-            第{r.index}局 白 Lv{r.whiteLevel} / 黒 Lv{r.blackLevel} → {r.error ? `エラー: ${r.error}` : r.winner === "draw" ? "引き分け" : r.winner ? `${r.winner === "white" ? "白" : "黒"}(Lv${r.winnerLevel}) の勝ち` : "未終了"}({r.plies} 手)
+            第{r.index}局 白 Lv{r.whiteLevel} / 黒 Lv{r.blackLevel} → {r.error ? `エラー: ${r.error}` : r.winner === "draw" ? "引き分け" : r.winner ? `${r.winner === "white" ? "白" : "赤"}(Lv${r.winnerLevel}) の勝ち` : "未終了"}({r.plies} 手)
           </li>
         ))}
       </ol>

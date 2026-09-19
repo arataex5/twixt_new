@@ -108,7 +108,7 @@ export function movesString(moves: Move[]): string {
 
 export function resultLabel(r: Exclude<Result, null>, cpu?: CpuInfo): string {
   if (r.winner === "draw") return "引き分け";
-  const who = r.winner === "white" ? "白" : "黒";
+  const who = r.winner === "white" ? "白" : "赤";
   const side = cpu ? (r.winner === cpu.color ? "CPU の勝ち" : "あなたの勝ち") : `${who}の勝ち`;
   const reason = r.reason === "connect" ? "連結" : r.reason === "resign" ? "投了" : "";
   return reason ? `${side}(${reason})` : side;

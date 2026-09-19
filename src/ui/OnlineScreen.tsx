@@ -74,7 +74,7 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
         <div className="screen">
           <header className="bar"><button onClick={exitRoom}>← 戻る</button><h2>相手を待っています</h2></header>
           <div className="roomcode">{phase.code}</div>
-          <p className="muted">相手にこのルームコードを伝えてください。あなたは {phase.myColor === "white" ? "白(先手・上下)" : "黒(後手・左右)"} です。</p>
+          <p className="muted">相手にこのルームコードを伝えてください。あなたは {phase.myColor === "white" ? "白(先手・上下)" : "赤(後手・左右)"} です。</p>
           <div className="controls">
             <button onClick={() => navigator.clipboard?.writeText(phase.code)}>コードをコピー</button>
             {"share" in navigator && (
@@ -109,7 +109,7 @@ export function OnlineScreen({ settings, onSettingsChange, onExit }: OnlineScree
           <select value={hostColor} onChange={(e) => setHostColor(e.target.value as Player | "random")}>
             <option value="random">ランダム</option>
             <option value="white">白(先手・上下)</option>
-            <option value="black">黒(後手・左右)</option>
+            <option value="black">赤(後手・左右)</option>
           </select>
         </label>
         <label className="row">

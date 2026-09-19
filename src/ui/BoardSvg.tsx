@@ -22,15 +22,15 @@ const PAD = 22;
 const W = SIZE * CELL + PAD * 2;
 
 const COLORS = {
-  board: "#efe6d2",
-  boardEdge: "#d9cdb2",
-  hole: "#b9aa87",
-  label: "#8a7a58",
-  white: "#fbfaf6",
-  whiteEdge: "#b9b2a2",
-  black: "#22262b",
-  blackEdge: "#0d0f12",
-  last: "#e0483e",
+  board: "#dcc59c",
+  boardEdge: "#bfa478",
+  hole: "#a08a5e",
+  label: "#6e5a36",
+  white: "#fffdf8",
+  whiteEdge: "#6f6350",
+  black: "#d23c31",
+  blackEdge: "#8f1f18",
+  last: "#2f5fb3",
   selected: "#f5a623",
   win: "#f2b632",
   candidate: "#2f5fb3",
@@ -170,9 +170,9 @@ export function BoardSvg(props: BoardSvgProps) {
               <circle key={`peg-${state.moves.length}`} className={isLast ? "peg-new" : undefined} cx={cx} cy={cy} r={CELL * 0.36}
                 fill={owner === "white" ? COLORS.white : COLORS.black}
                 stroke={owner === "white" ? COLORS.whiteEdge : COLORS.blackEdge}
-                strokeWidth={1.5} filter="url(#pegShadow)" />
+                strokeWidth={owner === "white" ? 2 : 1.5} filter="url(#pegShadow)" />
               {owner === "white" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.11} fill="#fff" opacity={0.9} pointerEvents="none" />}
-              {owner === "black" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.1} fill="#fff" opacity={0.18} pointerEvents="none" />}
+              {owner === "black" && <circle cx={cx - CELL * 0.1} cy={cy - CELL * 0.12} r={CELL * 0.1} fill="#fff" opacity={0.35} pointerEvents="none" />}
             </>
           )}
         </g>,
@@ -197,7 +197,7 @@ export function BoardSvg(props: BoardSvgProps) {
         strokeWidth={sel ? 7 : 5} strokeLinecap="round" opacity={sel ? 0.9 : 1}
         strokeDasharray={sel ? "6 5" : undefined} />,
     );
-    if (owner === "white" && !sel) outlines.push(<line key={`e${id}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.whiteEdge} strokeWidth={6.5} strokeLinecap="round" opacity={0.55} />);
+    if (owner === "white" && !sel) outlines.push(<line key={`e${id}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.whiteEdge} strokeWidth={7.5} strokeLinecap="round" opacity={0.8} />);
   }
 
   // 座標ラベル
@@ -216,26 +216,29 @@ export function BoardSvg(props: BoardSvgProps) {
       style={{ touchAction: "none", userSelect: "none" }}>
       <defs>
         <filter id="pegShadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="1.2" stdDeviation="1" floodColor="#1f2329" floodOpacity="0.35" />
+          <feDropShadow dx="0" dy="1.4" stdDeviation="1.1" floodColor="#1f2329" floodOpacity="0.45" />
         </filter>
         <linearGradient id="boardGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f3ebd9" />
-          <stop offset="1" stopColor="#e6dbc2" />
+          <stop offset="0" stopColor="#e4cfa9" />
+          <stop offset="1" stopColor="#d1b784" />
         </linearGradient>
       </defs>
       <rect x={0} y={0} width={W} height={W} fill="url(#boardGrad)" rx={10} />
       <rect x={1} y={1} width={W - 2} height={W - 2} fill="none" stroke={COLORS.boardEdge} strokeWidth={2} rx={9} />
       <g transform={transform}>
-        {/* 辺行の帯: 白は上下、黒は左右 */}
-        <rect x={edge} y={PAD} width={W - 2 * edge} height={CELL} fill="#fff" opacity={0.55} rx={4} />
-        <rect x={edge} y={W - PAD - CELL} width={W - 2 * edge} height={CELL} fill="#fff" opacity={0.55} rx={4} />
-        <rect x={PAD} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.16} rx={4} />
-        <rect x={W - PAD - CELL} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.16} rx={4} />
+        {/* 辺行の帯: 白は上下、赤は左右 */}
+        <rect x={edge} y={PAD} width={W - 2 * edge} height={CELL} fill="#fff" opacity={0.4} rx={4} />
+        <rect x={edge} y={W - PAD - CELL} width={W - 2 * edge} height={CELL} fill="#fff" opacity={0.4} rx={4} />
+        <rect x={PAD} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.22} rx={4} />
+        <rect x={W - PAD - CELL} y={edge} width={CELL} height={W - 2 * edge} fill={COLORS.black} opacity={0.22} rx={4} />
         {/* 境界線 */}
         <line x1={edge} y1={edge} x2={W - edge} y2={edge} stroke="#fff" strokeWidth={2} opacity={0.9} />
         <line x1={edge} y1={W - edge} x2={W - edge} y2={W - edge} stroke="#fff" strokeWidth={2} opacity={0.9} />
         <line x1={edge} y1={edge} x2={edge} y2={W - edge} stroke={COLORS.black} strokeWidth={2} opacity={0.6} />
         <line x1={W - edge} y1={edge} x2={W - edge} y2={W - edge} stroke={COLORS.black} strokeWidth={2} opacity={0.6} />
+        {/* 中央の目安線(縦横の真ん中) */}
+        <line x1={W / 2} y1={edge} x2={W / 2} y2={W - edge} stroke={COLORS.label} strokeWidth={1} strokeDasharray="3 5" opacity={0.45} />
+        <line x1={edge} y1={W / 2} x2={W - edge} y2={W / 2} stroke={COLORS.label} strokeWidth={1} strokeDasharray="3 5" opacity={0.45} />
         {labels}
         {holes}
         {outlines}
