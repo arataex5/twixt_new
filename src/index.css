@@ -175,3 +175,4 @@ textarea { width: 100%; }
 .pill.black { background: var(--black-peg); color: #fff; }
 .ready-mark { font-size: 0.85rem; color: var(--muted); }
 .ready-mark.on { color: #1a7f37; font-weight: 700; }
+.confirm.draw { background: var(--info-bg); border-color: #b9dde2; }

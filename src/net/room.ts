@@ -28,6 +28,8 @@ export interface RoomData {
   status: "waiting" | "ready" | "playing" | "finished";
   /** 準備完了フラグ(ready 中のみ意味を持つ) */
   ready?: { white?: boolean; black?: boolean };
+  /** 引き分け提案中の側(対局中のみ)。着手があると消える */
+  drawOffer?: Player | null;
   /** 棋譜(空白区切り) */
   moves: string;
   result: Result;
@@ -127,6 +129,7 @@ export function moveTransition(cur: RoomData, uid: string, move: Move, expectedI
     return (e as Error).message;
   }
   cur.moves = [cur.moves, moveToStr(move)].filter(Boolean).join(" ");
+  cur.drawOffer = null; // 着手で引き分け提案は流れる
   if (next.result) { cur.result = next.result; cur.status = "finished"; }
   return cur;
 }
@@ -167,6 +170,31 @@ export function readyTransition(cur: RoomData, uid: string, ready: boolean): Roo
   const color: Player | null = players.white === uid ? "white" : players.black === uid ? "black" : null;
   if (!color) return "参加者ではありません";
   cur.ready = { ...(cur.ready ?? {}), [color]: ready };
+  return cur;
+}
+
+/** 引き分けの提案・受諾・拒否(自分の提案の取り消しは decline)。戻り値: 文字列 = 拒否理由 */
+export function drawTransition(cur: RoomData, uid: string, action: "offer" | "accept" | "decline"): RoomData | string {
+  if (cur.status !== "playing") return "対局中ではありません";
+  const players = cur.players ?? {};
+  const me: Player | null = players.white === uid ? "white" : players.black === uid ? "black" : null;
+  if (!me) return "参加者ではありません";
+  const offer = cur.drawOffer ?? null;
+  if (action === "offer") {
+    if (offer) return offer === me ? "すでに提案しています" : "相手からの提案に答えてください";
+    cur.drawOffer = me;
+    return cur;
+  }
+  if (!offer) return "引き分けの提案はありません";
+  if (action === "accept") {
+    if (offer === me) return "自分の提案は受諾できません";
+    cur.drawOffer = null;
+    cur.result = { winner: "draw", reason: "agreement" };
+    cur.status = "finished";
+    cur.moves = [cur.moves, "draw"].filter(Boolean).join(" ");
+    return cur;
+  }
+  cur.drawOffer = null; // decline(相手の拒否 or 自分の取り消し)
   return cur;
 }
 
@@ -221,6 +249,7 @@ type Msg =
   | { t: "ack"; id: number; ok: boolean; reason?: string }
   | { t: "state"; data: RoomData }
   | { t: "ready"; uid: string; ready: boolean }
+  | { t: "draw"; uid: string; action: "offer" | "accept" | "decline" }
   | { t: "bye" };
 
 interface Session {
@@ -350,6 +379,13 @@ function attachHostConn(s: Session, conn: DataConnection) {
       s.data = r;
       persist(s);
       safeSend(conn, { t: "ack", id: m.id, ok: true });
+      safeSend(conn, { t: "state", data: clone(s.data) });
+      notify(s);
+    } else if (m.t === "draw") {
+      const r = drawTransition(clone(s.data), m.uid, m.action);
+      if (typeof r === "string") return;
+      s.data = r;
+      persist(s);
       safeSend(conn, { t: "state", data: clone(s.data) });
       notify(s);
     } else if (m.t === "ready") {
@@ -674,6 +710,29 @@ export async function startGame(code: string, uid: string): Promise<void> {
   persist(s);
   safeSend(s.conn, { t: "state", data: clone(s.data) });
   notify(s);
+}
+
+/** 引き分けの提案・受諾・拒否 */
+export async function drawAction(code: string, uid: string, action: "offer" | "accept" | "decline"): Promise<void> {
+  if (MOCK) {
+    let reason = "";
+    const r = mockTransaction(code, (cur) => { if (!cur) { reason = "ルームがありません"; return; } const t = drawTransition(cur, uid, action); if (typeof t === "string") { reason = t; return; } return t; });
+    if (!r.committed) throw new Error(reason);
+    return;
+  }
+  const s = sessions.get(code);
+  if (!s || !s.alive) throw new Error("ルームに接続していません");
+  if (s.role === "host") {
+    const r = drawTransition(clone(s.data), uid, action);
+    if (typeof r === "string") throw new Error(r);
+    s.data = r;
+    persist(s);
+    safeSend(s.conn, { t: "state", data: clone(s.data) });
+    notify(s);
+    return;
+  }
+  if (!s.conn?.open) throw new Error("相手と接続されていません(再接続中)");
+  safeSend(s.conn, { t: "draw", uid, action });
 }
 
 /** ルームを離れる。待機中・終了済みなら保存も消す(対局中は「直前のルームに戻る」用に残す) */

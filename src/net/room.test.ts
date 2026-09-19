@@ -1,7 +1,7 @@
 // ルームのトランザクション本体のテスト。
 // 空き枠は null の場合と未設定(undefined)の場合の両方があり得る点を再現する。
 import { describe, expect, it } from "vitest";
-import { joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, startTransition, type RoomData } from "./room";
+import { drawTransition, joinTransition, mergeRemote, moveTransition, normalizeCode, readyTransition, startTransition, type RoomData } from "./room";
 
 const settings = { pieRule: true, rules: "standard" as const };
 
@@ -137,5 +137,38 @@ describe("readyTransition / startTransition", () => {
   });
   it("相手未入室なら拒否", () => {
     expect(readyTransition(room(), "host", true)).toMatch(/入室/);
+  });
+});
+
+describe("drawTransition(引き分け提案)", () => {
+  const playing = () => room({ players: { white: "w", black: "b" }, status: "playing", moves: "L12 M14" });
+  it("提案すると drawOffer に自分の色が入る", () => {
+    const r = drawTransition(playing(), "w", "offer") as RoomData;
+    expect(r.drawOffer).toBe("white");
+    expect(r.status).toBe("playing");
+  });
+  it("相手が受諾すると合意の引き分けで終了", () => {
+    const r1 = drawTransition(playing(), "w", "offer") as RoomData;
+    const r2 = drawTransition(r1, "b", "accept") as RoomData;
+    expect(r2.status).toBe("finished");
+    expect(r2.result).toEqual({ winner: "draw", reason: "agreement" });
+    expect(r2.moves).toBe("L12 M14 draw");
+  });
+  it("自分の提案は受諾できない", () => {
+    const r1 = drawTransition(playing(), "w", "offer") as RoomData;
+    expect(drawTransition(r1, "w", "accept")).toMatch(/自分/);
+  });
+  it("拒否・取り消しで提案が消える", () => {
+    const r1 = drawTransition(playing(), "w", "offer") as RoomData;
+    expect((drawTransition({ ...r1 }, "b", "decline") as RoomData).drawOffer).toBeNull();
+    expect((drawTransition({ ...r1 }, "w", "decline") as RoomData).drawOffer).toBeNull();
+  });
+  it("着手すると提案は流れる", () => {
+    const r1 = drawTransition(playing(), "b", "offer") as RoomData;
+    const r2 = moveTransition(r1, "w", { type: "place", x: 9, y: 9 }, 2) as RoomData;
+    expect(r2.drawOffer).toBeNull();
+  });
+  it("提案が無いときの受諾は拒否", () => {
+    expect(drawTransition(playing(), "b", "accept")).toMatch(/提案はありません/);
   });
 });

@@ -27,6 +27,9 @@ export interface OnlineConfig {
   result: Result;
   opponentOnline: boolean;
   send: (move: Move, expectedIndex: number) => Promise<void>;
+  /** 引き分け提案中の側 */
+  drawOffer?: Player | null;
+  draw?: (action: "offer" | "accept" | "decline") => Promise<void>;
 }
 
 export interface GameScreenProps {
@@ -295,6 +298,16 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
       )}
       {error && <div className="hint error">{error}</div>}
       {swapNotice && <div className="hint swap">{swapNotice}</div>}
+      {online?.draw && !state.result && online.drawOffer && online.drawOffer !== online.myColor && (
+        <div className="confirm draw">
+          <span>相手から<strong>引き分け</strong>の提案があります</span>
+          <button className="primary" onClick={() => online.draw!("accept").catch((e) => setError((e as Error).message))}>受け入れる</button>
+          <button onClick={() => online.draw!("decline").catch((e) => setError((e as Error).message))}>断る</button>
+        </div>
+      )}
+      {online?.draw && !state.result && online.drawOffer === online.myColor && (
+        <div className="hint">引き分けを提案中です。相手の返事を待っています…(相手が着手すると提案は流れます)</div>
+      )}
       {online && (
         <div className="muted small">
           ルーム <strong>{online.code}</strong> · あなたは {NAME[online.myColor]} · 相手: {online.status === "waiting" ? "未参加" : online.opponentOnline ? "接続中" : "切断中(復帰待ち)"}
@@ -318,6 +331,12 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         {!online && <button disabled={state.moves.length === 0} onClick={doUndo}>待った</button>}
         <button disabled={!!state.result} onClick={() => { if (confirm("投了しますか?")) { abortRef.current?.abort(); play({ type: "resign" }); } }}>投了</button>
         {!cpu && !online && <button disabled={!!state.result} onClick={() => { if (confirm("引き分けにしますか?")) play({ type: "draw" }); }}>引き分け</button>}
+        {online?.draw && !state.result && online.status === "playing" && !online.drawOffer && (
+          <button onClick={() => { if (confirm("相手に引き分けを提案しますか?")) online.draw!("offer").catch((e) => setError((e as Error).message)); }}>引き分けを提案</button>
+        )}
+        {online?.draw && !state.result && online.drawOffer === online.myColor && (
+          <button onClick={() => online.draw!("decline").catch((e) => setError((e as Error).message))}>引き分け提案を取り消す</button>
+        )}
         {!cpu && !online && <label className="toggle"><input type="checkbox" checked={rotateForBlack} onChange={(e) => setRotateForBlack(e.target.checked)} /> 赤番で盤を回転</label>}
         {cpu && <label className="toggle"><input type="checkbox" checked={showCandidates} onChange={(e) => setShowCandidates(e.target.checked)} /> CPUの候補手を表示</label>}
       </div>
