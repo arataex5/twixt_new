@@ -9,6 +9,8 @@ import { getEngine } from "../engine/EngineClient";
 import { AVAILABLE_LEVELS, levelSpec } from "../engine/levels";
 import { addRecord } from "../store/history";
 import { BoardSvg } from "./BoardSvg";
+import { ExplainPanel, type Explanation } from "./ExplainPanel";
+import { baseExplanation, completeExplanation, loadExplainFlag, saveExplainFlag } from "./explanation";
 
 export interface CpuMatchConfig {
   whiteLevel: number;
@@ -78,6 +80,13 @@ export function CpuMatchScreen({ initial, autoStart, onExit, onReplay }: CpuMatc
   const [phase, setPhase] = useState<"idle" | "running" | "paused" | "done">("idle");
   const [status, setStatus] = useState("エンジン読み込み中…");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [explainOn, setExplainOn] = useState(loadExplainFlag);
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [prevExplanation, setPrevExplanation] = useState<Explanation | null>(null);
+  const [explainBusy, setExplainBusy] = useState(false);
+  const explainRef = useRef(explainOn);
+  explainRef.current = explainOn;
+  const lastExpRef = useRef<Explanation | null>(null);
 
   const stopRef = useRef(false);
   const pauseRef = useRef(false);
@@ -135,6 +144,9 @@ export function CpuMatchScreen({ initial, autoStart, onExit, onReplay }: CpuMatc
       };
       const startedAt = new Date().toISOString();
       setCurrent({ index: g + 1, state, whiteLevel, blackLevel });
+      lastExpRef.current = null;
+      setExplanation(null);
+      setPrevExplanation(null);
 
       while (!state.result && state.moves.length < c.maxPlies) {
         if (stopRef.current) break;
@@ -155,7 +167,23 @@ export function CpuMatchScreen({ initial, autoStart, onExit, onReplay }: CpuMatc
         try {
           const r = await engine.think(state.settings, state.moves, level, ctrl.signal, c.strongestSec * 1000);
           (msByLevel[level] ??= []).push(performance.now() - t0);
+          const before = state;
           state = applyMove(state, r.move);
+          if (explainRef.current) {
+            const who = `${before.toMove === "white" ? "白" : "赤"} Lv${level}`;
+            const built = baseExplanation(before, r, level, who);
+            if (built) {
+              setPrevExplanation(lastExpRef.current);
+              lastExpRef.current = built.exp;
+              setExplanation(built.exp);
+              setExplainBusy(true);
+              // 着手後の評価は裏で埋める(次の手の思考と並行)
+              void completeExplanation(built.exp, built.next).then((done) => {
+                setExplanation((cur) => (cur === built.exp ? done : cur));
+                setExplainBusy(false);
+              });
+            }
+          }
           setCurrent({ index: g + 1, state, whiteLevel, blackLevel });
           setProgress(null);
         } catch (e) {
@@ -258,6 +286,17 @@ export function CpuMatchScreen({ initial, autoStart, onExit, onReplay }: CpuMatc
         {phase === "running" && <button onClick={() => { pauseRef.current = true; }}>一時停止</button>}
         {phase === "paused" && <button className="primary" onClick={() => { pauseRef.current = false; }}>再開</button>}
         {busy && <button className="danger" onClick={stop}>中断</button>}
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={explainOn}
+            onChange={(e) => {
+              setExplainOn(e.target.checked);
+              saveExplainFlag(e.target.checked);
+              if (!e.target.checked) { lastExpRef.current = null; setExplanation(null); setPrevExplanation(null); }
+            }}
+          /> CPUの解説
+        </label>
       </div>
 
       <p className="muted small">
@@ -265,6 +304,22 @@ export function CpuMatchScreen({ initial, autoStart, onExit, onReplay }: CpuMatc
         {progress && progress.done > 0 ? ` · ${progress.done} 回読み` : ""}
       </p>
       <p className="muted small">中断はいつでも押せます(考え中でもすぐ止まります)。一時停止は今の 1 手を打ち終えてから止まります。</p>
+
+      {current && (
+        <div className="board-wrap">
+          <BoardSvg state={current.state} interactive={null} selectedLinks={new Set()} onPlace={() => {}} onToggleLink={() => {}} />
+        </div>
+      )}
+      {explainOn && explanation && <ExplainPanel exp={explanation} busy={explainBusy} />}
+      {explainOn && prevExplanation && (
+        <details className="record">
+          <summary>ひとつ前の手({prevExplanation.who} {prevExplanation.coord})の解説</summary>
+          <ExplainPanel exp={prevExplanation} busy={false} />
+        </details>
+      )}
+      {explainOn && !explanation && phase === "idle" && (
+        <p className="muted small">解説オン: 対局が始まると、CPU が打つたびに「ねらい」と評価が表示されます。一時停止するとゆっくり読めます。</p>
+      )}
 
       {records.length > 0 && (
         <>
@@ -299,11 +354,6 @@ export function CpuMatchScreen({ initial, autoStart, onExit, onReplay }: CpuMatc
         </>
       )}
 
-      {current && (
-        <div className="board-wrap">
-          <BoardSvg state={current.state} interactive={null} selectedLinks={new Set()} onPlace={() => {}} onToggleLink={() => {}} />
-        </div>
-      )}
 
       <details className="record">
         <summary>結果 JSON(校正用)</summary>

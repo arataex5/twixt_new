@@ -7,6 +7,8 @@ export interface ExplainCandidate {
 }
 
 export interface Explanation {
+  /** 誰の手か(例 "白 Lv3")。省略時は "CPU" */
+  who?: string;
   /** 解説対象の手 */
   coord: string;
   level: number;
@@ -24,7 +26,7 @@ export function ExplainPanel({ exp, busy }: { exp: Explanation; busy: boolean })
   return (
     <div className="explain">
       <div className="explain-head">
-        <strong>CPU の手: {exp.coord}</strong>
+        <strong>{exp.who ?? "CPU"} の手: {exp.coord}</strong>
         <span className="muted small">Lv{exp.level}{exp.sims !== undefined ? ` · ${exp.sims} 回読み` : " · 読みなし(直感)"}</span>
       </div>
       <p className="explain-headline">{exp.headline}</p>
