@@ -14,9 +14,11 @@ export interface GameRecord {
   /** 開始/終了時刻(ISO) */
   startedAt: string;
   endedAt: string;
-  mode: "local" | "cpu" | "online";
+  mode: "local" | "cpu" | "online" | "cpuvscpu";
   settings: GameSettings;
   cpu?: CpuInfo;
+  /** CPU 同士の対戦のときの、もう一方の CPU */
+  cpu2?: CpuInfo;
   /** 棋譜(空白区切り) */
   moves: string;
   result: Exclude<Result, null>;

@@ -37,13 +37,17 @@ export function HistoryScreen({ onExit, onOpen }: HistoryScreenProps) {
 
       <ul className="history">
         {list.map((r) => {
-          const title = r.mode === "cpu" && r.cpu
-            ? `CPU Lv${r.cpu.level} ${levelSpec(r.cpu.level).name}(あなた: ${r.cpu.color === "white" ? "赤" : "白"})`
-            : r.mode === "online" ? "オンライン対戦" : "ローカル対戦";
+          const isCpuVsCpu = r.mode === "cpuvscpu";
+          const title = isCpuVsCpu && r.cpu && r.cpu2
+            ? `CPU 同士 白Lv${r.cpu.level} vs 赤Lv${r.cpu2.level}`
+            : r.mode === "cpu" && r.cpu
+              ? `CPU Lv${r.cpu.level} ${levelSpec(r.cpu.level).name}(あなた: ${r.cpu.color === "white" ? "赤" : "白"})`
+              : r.mode === "online" ? "オンライン対戦" : "ローカル対戦";
+          const label = isCpuVsCpu ? resultLabel(r.result) : resultLabel(r.result, r.cpu);
           return (
             <li key={r.id} className="history-item">
-              <div className="history-main" onClick={() => onOpen(`${title} — ${resultLabel(r.result, r.cpu)}`, r.settings, strToMoves(r.moves))}>
-                <div><strong>{resultLabel(r.result, r.cpu)}</strong> <span className="muted small">{fmt(r.endedAt)}</span></div>
+              <div className="history-main" onClick={() => onOpen(`${title} — ${label}`, r.settings, strToMoves(r.moves))}>
+                <div><strong>{label}</strong> <span className="muted small">{fmt(r.endedAt)}</span></div>
                 <div className="muted small">{title} · {r.moves.split(/\s+/).filter(Boolean).length} 手{r.settings.pieRule ? "" : " · パイ無し"}{r.settings.rules === "pp" ? " · PP" : ""}</div>
               </div>
               <button className="small" onClick={() => { if (confirm("この対局を削除しますか?")) { deleteRecord(r.id); setList(loadHistory()); } }}>削除</button>

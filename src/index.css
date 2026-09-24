@@ -198,3 +198,14 @@ textarea { width: 100%; }
 .result .controls { flex-wrap: nowrap; }
 @media (prefers-reduced-motion: reduce) { .gameover, .gameover-backdrop, .gameover-emoji { animation: none; } .confetti { display: none; } }
 .confirm.links { background: var(--warn-bg); border-color: #efd9a8; }
+
+/* CPU の着手解説 */
+.explain { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.explain-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.explain-headline { margin: 0; font-weight: 600; }
+.explain-list { margin: 0; padding-left: 1.2em; font-size: 0.9rem; display: flex; flex-direction: column; gap: 3px; }
+.explain-nums { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.9rem; color: var(--muted); }
+.explain-cands summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+.explain-cands ol { margin: 6px 0; padding-left: 1.4em; }
+.explain-cands code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.calib .row select, .calib .row input { flex: 0 0 auto; }

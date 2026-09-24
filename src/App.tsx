@@ -9,7 +9,7 @@ import { OnlineScreen } from "./ui/OnlineScreen";
 import { AVAILABLE_LEVELS } from "./engine/levels";
 import { GameScreen, type CpuConfig } from "./ui/GameScreen";
 import { HelpButton, PIE_RULE_HELP, RULES_HELP } from "./ui/Help";
-import { CalibScreen, parseCalibParams } from "./ui/CalibScreen";
+import { CpuMatchScreen, parseCalibParams, type CpuMatchConfig } from "./ui/CpuMatchScreen";
 
 type Mode = "local" | "cpu";
 type Screen =
@@ -18,8 +18,8 @@ type Screen =
   | { name: "game"; mode: Mode; settings: GameSettings; cpu?: CpuConfig; initialMoves?: Move[]; startedAt?: string; nonce?: number }
   | { name: "history" }
   | { name: "online" }
-  | { name: "calib" }
-  | { name: "replay"; title: string; settings: GameSettings; moves: Move[] };
+  | { name: "cpumatch"; config?: CpuMatchConfig; autoStart?: boolean }
+  | { name: "replay"; title: string; settings: GameSettings; moves: Move[]; from: "history" | "cpumatch" };
 
 const STORAGE_KEY = "twixt.settings.v1";
 
@@ -46,7 +46,10 @@ function replayToMove(settings: GameSettings, moves: Move[]): Player {
 export default function App() {
   const [screen, setScreen] = useState<Screen>(() => {
     const q = new URLSearchParams(location.search);
-    if (q.get("calib") === "1") return { name: "calib" };
+    if (q.get("calib") === "1") {
+      const p = parseCalibParams(location.search);
+      return { name: "cpumatch", config: p.config, autoStart: p.autoStart };
+    }
     return q.get("room") ? { name: "online" } : { name: "home" };
   });
   const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
@@ -70,8 +73,15 @@ export default function App() {
     );
   }
 
-  if (screen.name === "calib") {
-    return <CalibScreen params={parseCalibParams(location.search)} onExit={() => setScreen({ name: "home" })} />;
+  if (screen.name === "cpumatch") {
+    return (
+      <CpuMatchScreen
+        initial={screen.config}
+        autoStart={screen.autoStart}
+        onExit={() => setScreen({ name: "home" })}
+        onReplay={(title, s, moves) => setScreen({ name: "replay", title, settings: s, moves, from: "cpumatch" })}
+      />
+    );
   }
 
   if (screen.name === "online") {
@@ -79,7 +89,7 @@ export default function App() {
   }
 
   if (screen.name === "history") {
-    return <HistoryScreen onExit={() => setScreen({ name: "home" })} onOpen={(title, s, moves) => setScreen({ name: "replay", title, settings: s, moves })} />;
+    return <HistoryScreen onExit={() => setScreen({ name: "home" })} onOpen={(title, s, moves) => setScreen({ name: "replay", title, settings: s, moves, from: "history" })} />;
   }
 
   if (screen.name === "replay") {
@@ -88,7 +98,7 @@ export default function App() {
         title={screen.title}
         settings={screen.settings}
         moves={screen.moves}
-        onExit={() => setScreen({ name: "history" })}
+        onExit={() => setScreen(screen.from === "cpumatch" ? { name: "cpumatch" } : { name: "history" })}
         onPlayFrom={(moves) => {
           // 手番側が人間、相手が CPU(現在のレベル設定)
           const st = replayToMove(screen.settings, moves);
@@ -187,6 +197,9 @@ export default function App() {
         </button>
         <button className="big" onClick={() => setScreen({ name: "online" })}>
           <span className="ic">📡</span><span className="lbl">オンライン対戦<small>ルームコードで友達と</small></span>
+        </button>
+        <button className="big" onClick={() => setScreen({ name: "cpumatch" })}>
+          <span className="ic">⚔️</span><span className="lbl">CPU 同士の対戦<small>レベルを選んで観戦・いつでも中断</small></span>
         </button>
         <button className="big" onClick={() => setScreen({ name: "history" })}>
           <span className="ic">📖</span><span className="lbl">対局履歴・棋譜再生<small>過去の対局を見返す</small></span>

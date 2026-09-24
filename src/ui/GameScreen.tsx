@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LinkId, Player } from "../core/board";
 import { applyMove, newGame, replay, undo, type GameSettings, type GameState, type Move, type Result } from "../core/game";
-import { idx } from "../core/board";
+import { idx, xy } from "../core/board";
+import { analyzeMove, explainMove } from "../core/explain";
 import { movesToStr, pointToStr, strToMoves } from "../core/notation";
 import { getEngine, type ThinkResult } from "../engine/EngineClient";
 import { levelSpec } from "../engine/levels";
 import { addRecord, clearInProgress, saveInProgress } from "../store/history";
 import { BoardSvg } from "./BoardSvg";
+import { ExplainPanel, type Explanation } from "./ExplainPanel";
 import { HelpButton, PIE_RULE_HELP, PatternsPanel } from "./Help";
 
 export interface CpuConfig {
@@ -46,6 +48,13 @@ export interface GameScreenProps {
 
 const NAME: Record<Player, string> = { white: "白(上下)", black: "赤(左右)" };
 
+const EXPLAIN_KEY = "twixt.explain.v1";
+function loadExplainFlag(): boolean {
+  try { return localStorage.getItem(EXPLAIN_KEY) === "1"; } catch { return false; }
+}
+/** −1..+1 の評価値を勝率(%)に */
+const toWin = (v: number) => Math.round(((v + 1) / 2) * 100);
+
 export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onExit }: GameScreenProps) {
   const [state, setState] = useState<GameState>(() => (initialMoves?.length ? replay(settings, initialMoves) : newGame(settings)));
   const startedAtRef = useRef(startedAt ?? new Date().toISOString());
@@ -57,6 +66,9 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
   const [engineStatus, setEngineStatus] = useState<string>(cpu ? "エンジン読み込み中…" : "");
   const [lastThink, setLastThink] = useState<ThinkResult | null>(null);
   const [showCandidates, setShowCandidates] = useState(false);
+  const [explainOn, setExplainOn] = useState(loadExplainFlag);
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [explainBusy, setExplainBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -154,6 +166,40 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
     return () => { alive = false; };
   }, [cpu]);
 
+  // CPU の着手の解説(盤面から読み取れる事実 + ネットの評価)
+  const explainRef = useRef(explainOn);
+  explainRef.current = explainOn;
+  const buildExplanation = async (prev: GameState, r: ThinkResult) => {
+    if (!cpu) return;
+    let next: GameState;
+    try { next = applyMove(prev, r.move); } catch { return; }
+    const facts = analyzeMove(prev, next);
+    const base = facts
+      ? explainMove(facts)
+      : { headline: r.move.type === "swap" ? "初手を奪うスワップ(先手が有利と判断しました)" : "投了", bullets: [] as string[] };
+    const exp: Explanation = {
+      coord: facts ? facts.coord : r.move.type === "swap" ? "スワップ" : "—",
+      level: cpu.level,
+      headline: base.headline,
+      bullets: base.bullets,
+      winBefore: toWin(r.value),
+      winAfter: null,
+      sims: r.sims,
+      candidates: r.candidates.slice(0, 3).map((c) => {
+        const [cx, cy] = xy(c.cell);
+        return { coord: pointToStr(cx, cy), p: c.p, n: c.n, q: c.q };
+      }),
+    };
+    setExplanation(exp);
+    setExplainBusy(true);
+    try {
+      const ev = await getEngine().evaluate(next.settings, next.moves);
+      setExplanation((cur) => (cur === exp ? { ...exp, winAfter: toWin(-ev.value) } : cur));
+    } catch { /* 解説は補助情報なので失敗しても無視 */ } finally {
+      setExplainBusy(false);
+    }
+  };
+
   // CPU の手番
   useEffect(() => {
     if (!cpu || state.result || state.toMove !== cpu.color) return;
@@ -168,6 +214,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
       .then((r) => {
         if (ctrl.signal.aborted) return;
         setLastThink(r);
+        if (explainRef.current) buildExplanation(stateRef.current, r);
         play(r.move);
       })
       .catch((e) => { if (!ctrl.signal.aborted) setError(`CPU エラー: ${(e as Error).message}`); })
@@ -211,6 +258,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
       setError((e as Error).message);
     }
     setSelected(new Set());
+    setExplanation(null);
   };
 
   // 手番が変わったら選択は消す
@@ -224,7 +272,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
   }, [state.result]);
 
   const restart = () => {
-    const n = newGame(settings); stateRef.current = n; setState(n); setSelected(new Set()); setLastThink(null); setPending(null); setError(null);
+    const n = newGame(settings); stateRef.current = n; setState(n); setSelected(new Set()); setLastThink(null); setPending(null); setError(null); setExplanation(null);
     savedRef.current = false; startedAtRef.current = new Date().toISOString();
   };
   const outcome = useMemo(() => {
@@ -350,6 +398,7 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
           {" / Lv"}{cpu.level} {levelSpec(cpu.level).name}
         </div>
       )}
+      {cpu && explainOn && explanation && <ExplainPanel exp={explanation} busy={explainBusy} />}
 
       <div className="controls">
         {canHumanSwap && (
@@ -369,6 +418,19 @@ export function GameScreen({ settings, cpu, online, initialMoves, startedAt, onE
         )}
         {!cpu && !online && <label className="toggle"><input type="checkbox" checked={rotateForBlack} onChange={(e) => setRotateForBlack(e.target.checked)} /> 赤番で盤を回転</label>}
         {cpu && <label className="toggle"><input type="checkbox" checked={showCandidates} onChange={(e) => setShowCandidates(e.target.checked)} /> CPUの候補手を表示</label>}
+        {cpu && (
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={explainOn}
+              onChange={(e) => {
+                setExplainOn(e.target.checked);
+                try { localStorage.setItem(EXPLAIN_KEY, e.target.checked ? "1" : "0"); } catch { /* ignore */ }
+                if (!e.target.checked) setExplanation(null);
+              }}
+            /> CPUの解説
+          </label>
+        )}
       </div>
 
       <PatternsPanel />

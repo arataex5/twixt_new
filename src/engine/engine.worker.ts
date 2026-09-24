@@ -30,6 +30,24 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
       const res = await think(state, msg.level, job, msg.strongestTimeMs);
       if (job.cancelled) post({ type: "cancelled", id: msg.id });
       else post({ type: "move", id: msg.id, ...res });
+    } else if (msg.type === "eval") {
+      const t0 = performance.now();
+      const state = replay(msg.settings, msg.moves);
+      if (state.result) {
+        const v = state.result.winner === "draw" ? 0 : state.result.winner === state.toMove ? 1 : -1;
+        post({ type: "evaluated", id: msg.id, value: v, candidates: [], evalMs: performance.now() - t0 });
+      } else {
+        const ev = await net.evaluate(state.board, state.toMove, false);
+        const order = Array.from({ length: ev.policy.length }, (_, i) => i)
+          .filter((i) => ev.legal[i])
+          .sort((a, b) => ev.policy[b] - ev.policy[a])
+          .slice(0, 5);
+        post({
+          type: "evaluated", id: msg.id, value: ev.value,
+          candidates: order.map((i) => ({ cell: policyIndexToCell(i, ev.transposed), p: ev.policy[i] })),
+          evalMs: performance.now() - t0,
+        });
+      }
     } else if (msg.type === "cancel") {
       if (current && current.id === msg.id) current.cancelled = true;
     }
@@ -76,7 +94,7 @@ async function think(state: GameState, level: number, job: { id: number; cancell
     if (job.cancelled) return { move: { type: "resign" }, value: 0, candidates: [], evalMs: 0 };
     let move = r.move;
     if (move.type === "place") move = placeWithRemoval(state, move.x, move.y);
-    return { move, value: r.value, candidates: r.candidates.map((c) => ({ cell: c.cell, p: c.p })), evalMs: performance.now() - t0, sims: r.sims };
+    return { move, value: r.value, candidates: r.candidates.map((c) => ({ cell: c.cell, p: c.p, n: c.n, q: c.q })), evalMs: performance.now() - t0, sims: r.sims };
   }
 
   const ev = await net.evaluate(state.board, state.toMove, true);

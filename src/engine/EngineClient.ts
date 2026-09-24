@@ -9,6 +9,13 @@ export interface ThinkResult {
   sims?: number;
 }
 
+export interface EvalResult {
+  /** 手番側から見た評価 −1..+1 */
+  value: number;
+  candidates: Candidate[];
+  evalMs: number;
+}
+
 export interface EngineInfo {
   loadMs: number;
   evalMs: number;
@@ -19,6 +26,7 @@ export class EngineClient {
   private worker: Worker;
   private nextId = 1;
   private pending = new Map<number, { resolve: (r: ThinkResult) => void; reject: (e: Error) => void }>();
+  private pendingEval = new Map<number, { resolve: (r: EvalResult) => void; reject: (e: Error) => void }>();
   private readyPromise: Promise<EngineInfo>;
   info: EngineInfo | null = null;
 
@@ -58,12 +66,17 @@ export class EngineClient {
     } else if (m.type === "move") {
       this.pending.get(m.id)?.resolve({ move: m.move, value: m.value, candidates: m.candidates, evalMs: m.evalMs, sims: m.sims });
       this.pending.delete(m.id);
+    } else if (m.type === "evaluated") {
+      this.pendingEval.get(m.id)?.resolve({ value: m.value, candidates: m.candidates, evalMs: m.evalMs });
+      this.pendingEval.delete(m.id);
     } else if (m.type === "cancelled") {
       this.pending.get(m.id)?.reject(new Error("cancelled"));
       this.pending.delete(m.id);
     } else if (m.type === "error" && m.id !== undefined) {
       this.pending.get(m.id)?.reject(new Error(m.message));
       this.pending.delete(m.id);
+      this.pendingEval.get(m.id)?.reject(new Error(m.message));
+      this.pendingEval.delete(m.id);
     }
   }
 
@@ -73,6 +86,14 @@ export class EngineClient {
     const p = new Promise<ThinkResult>((resolve, reject) => this.pending.set(id, { resolve, reject }));
     this.send({ type: "think", id, settings, moves, level, strongestTimeMs });
     signal?.addEventListener("abort", () => this.send({ type: "cancel", id }), { once: true });
+    return p;
+  }
+
+  /** 局面をネットで 1 回だけ評価する(解説用。探索はしない) */
+  evaluate(settings: GameSettings, moves: Move[]): Promise<EvalResult> {
+    const id = this.nextId++;
+    const p = new Promise<EvalResult>((resolve, reject) => this.pendingEval.set(id, { resolve, reject }));
+    this.send({ type: "eval", id, settings, moves });
     return p;
   }
 
